@@ -14,7 +14,16 @@
 <style>
 body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif; }
 .player-container { position: relative; width: 100%; background: black; }
-#stream-media { width: 100%; height: auto; background: black; }
+
+#stream-media {
+  width: 100%;
+  max-height: 70vh; /* Only limit in normal mode */
+  background: black;
+}
+
+.player-container.fullscreen #stream-media {
+  max-height: 100vh !important; /* Fullscreen override */
+}
 
 .watermark {
   position: absolute;
@@ -52,12 +61,13 @@ body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif;
   background: none;
   border: none;
 }
-.mejs__play button::before { content: "\f04b"; }       
-.mejs__pause button::before { content: "\f04c"; }      
-.mejs__mute button::before { content: "\f6a9"; }       
-.mejs__unmute button::before { content: "\f028"; }     
-.mejs__fullscreen button::before { content: "\f065"; } 
-.mejs__unfullscreen button::before { content: "\f066"; }
+
+.mejs__play button::before { content: "\f04b"; }       /* play */
+.mejs__pause button::before { content: "\f04c"; }      /* pause */
+.mejs__mute button::before { content: "\f6a9"; }       /* mute */
+.mejs__unmute button::before { content: "\f028"; }     /* volume on */
+.mejs__fullscreen button::before { content: "\f065"; } /* fullscreen */
+.mejs__unfullscreen button::before { content: "\f066"; } /* exit fullscreen */
 
 .mejs__time, .mejs__time-current, .mejs__time-total { color: #fff; }
 .mejs__time-current { color: #ff0000; }
@@ -69,22 +79,11 @@ body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif;
 .mejs__pause svg.mejs__icon-pause, .mejs__play svg.mejs__icon-play, .mejs__replay svg.mejs__icon-replay { display: none; }
 .mejs__mute .mejs__icon-mute, .mejs__unmute .mejs__icon-unmute { display: none; }
 .mejs__fullscreen svg.mejs__icon-fullscreen { display: none; }
-
-/* Fullscreen overrides */
-.mejs__container.fullscreen {
-  width: 100% !important;
-  height: 100% !important;
-  max-height: 100% !important;
-}
-.mejs__video {
-  width: 100% !important;
-  height: 100% !important;
-}
 </style>
 </head>
 <body>
 
-<div class="player-container">
+<div class="player-container" id="player-container">
   <video id="stream-media" controls preload="auto">
     <source src="{{ mediaLink }}" type="video/mp4">
   </video>
@@ -119,6 +118,7 @@ body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif;
 const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 const video = document.getElementById('stream-media');
 const downloadBtn = document.getElementById('download-btn');
+const container = document.getElementById('player-container');
 
 downloadBtn.href = mediaLink;
 downloadBtn.setAttribute("download", "");
@@ -132,14 +132,23 @@ if(mediaLink.endsWith('.m3u8') && Hls.isSupported()){
   video.src = mediaLink;
 }
 
-// Initialize MediaElement.js player
-new MediaElementPlayer(video, {
+// Initialize MediaElement.js
+const player = new MediaElementPlayer(video, {
   features: ['playpause','progress','current','duration','volume','fullscreen'],
   stretching: 'responsive',
   enableAutosize: true,
   alwaysShowControls: false,
   autoHide: true,
   autoHideTime: 2500
+});
+
+// Fix fullscreen container
+video.addEventListener('fullscreenchange', () => {
+  if(document.fullscreenElement){
+    container.classList.add('fullscreen');
+  } else {
+    container.classList.remove('fullscreen');
+  }
 });
 </script>
 </body>
