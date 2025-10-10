@@ -1,341 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>ChadStreamz Player</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>ChadStreamz Player</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- MediaElement.js CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mediaelement@7.0.5/build/mediaelementplayer.min.css">
+<!-- MediaElement.js CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mediaelement@7.0.5/build/mediaelementplayer.min.css">
 
-  <!-- FontAwesome for custom icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- FontAwesome for custom icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <style>
-    body {
-      margin: 0;
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-    }
+<style>
+  body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif; }
+  .player-container { position: relative; width: 100%; background: black; }
+  #stream-media { width: 100%; max-height: 70vh; background: black; }
 
-    /* Player */
-    .player-container {
-      position: relative;
-      width: 100%;
-      background: black;
-    }
+  .watermark {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 80px;
+    opacity: 0.7;
+    pointer-events: none;
+    z-index: 10;
+  }
 
-    #stream-media {
-      width: 100%;
-      max-height: 70vh;
-      background: black;
-    }
+  /* External Controls */
+  .external-controls {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    opacity: 1;
+    transition: opacity 0.5s;
+    pointer-events: auto;
+  }
 
-    .watermark {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 80px;
-      opacity: 0.7;
-      pointer-events: none;
-      z-index: 10;
-    }
+  .external-controls.hidden { opacity: 0; pointer-events: none; }
 
-    /* Bottom Section */
-    .bottom-section {
-      padding: 20px;
-    }
+  .external-controls button {
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 22px;
+    color: #fff;
+    background: #222;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
 
-    .download-btn {
-      display: inline-block;
-      padding: 12px 20px;
-      background: #ff0000;
-      color: #fff;
-      text-decoration: none;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 6px;
-      transition: 0.3s;
-    }
+  .external-controls button:hover { background: #ff0000; }
+  .external-controls button:focus { outline: none; }
 
-    .download-btn:hover {
-      background: #cc0000;
-    }
+  .progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 60%;
+    max-width: 600px;
+  }
 
-    /* Suggestions Grid */
-    .suggestions {
-      margin-top: 30px;
-    }
+  .time { font-size: 14px; color: #fff; min-width: 50px; text-align: center; }
+  .progress-bar { flex: 1; height: 6px; background: #444; border-radius: 3px; cursor: pointer; position: relative; }
+  .progress-filled { height: 100%; width: 0%; background: #ff0000; border-radius: 3px; }
 
-    .suggestions h2 {
-      font-size: 22px;
-      margin-bottom: 20px;
-    }
+  /* Bottom Section & Suggestions Grid */
+  .bottom-section { padding: 20px; }
+  .download-btn { display: inline-block; padding: 12px 20px; background: #ff0000; color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 6px; transition: 0.3s; }
+  .download-btn:hover { background: #cc0000; }
+  .suggestions { margin-top: 30px; }
+  .suggestions h2 { font-size: 22px; margin-bottom: 20px; }
+  .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
+  .movie-card { cursor: pointer; transition: transform 0.3s; }
+  .movie-card:hover { transform: scale(1.05); }
+  .movie-card img { width: 100%; border-radius: 8px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+  .movie-title { margin-top: 8px; font-size: 14px; text-align: center; color: #ccc; }
 
-    .movies-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 18px;
-    }
-
-    .movie-card {
-      cursor: pointer;
-      transition: transform 0.3s;
-    }
-
-    .movie-card:hover {
-      transform: scale(1.05);
-    }
-
-    .movie-card img {
-      width: 100%;
-      border-radius: 8px;
-      display: block;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-    }
-
-    .movie-title {
-      margin-top: 8px;
-      font-size: 14px;
-      text-align: center;
-      color: #ccc;
-    }
-
-    @media(max-width:768px){
-      .movie-title { font-size: 12px; }
-      .download-btn { font-size: 14px; padding: 10px 16px; }
-    }
-
-    /* Custom External Controls */
-    .external-controls {
-      margin-top: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      opacity: 1;
-      transition: opacity 0.5s;
-    }
-
-    .external-controls.hidden {
-      opacity: 0;
-    }
-
-    .external-controls button {
-      font-family: "Font Awesome 6 Free";
-      font-weight: 900;
-      font-size: 22px;
-      color: #fff;
-      background: #222;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    .external-controls button:hover {
-      background: #ff0000;
-    }
-
-    .external-controls button:focus { outline: none; }
-
-    .progress-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 60%;
-      max-width: 600px;
-    }
-
-    .time {
-      font-size: 14px;
-      color: #fff;
-      min-width: 50px;
-      text-align: center;
-    }
-
-    .progress-bar {
-      flex: 1;
-      height: 6px;
-      background: #444;
-      border-radius: 3px;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .progress-filled {
-      height: 100%;
-      width: 0%;
-      background: #ff0000;
-      border-radius: 3px;
-    }
-  </style>
+  @media(max-width:768px){
+    .movie-title { font-size: 12px; }
+    .download-btn { font-size: 14px; padding: 10px 16px; }
+  }
+</style>
 </head>
 <body>
 
-  <!-- Player -->
-  <div class="player-container">
-    <video id="stream-media" preload="auto">
-      <source src="{{ mediaLink }}" type="video/mp4">
-    </video>
-    <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
-  </div>
+<div class="player-container">
+  <video id="stream-media" preload="auto">
+    <source src="{{ mediaLink }}" type="video/mp4">
+  </video>
+  <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
+</div>
 
-  <!-- External Controls -->
-  <div class="external-controls" id="external-controls">
-    <button id="playpause"><i class="fa-solid fa-play"></i></button>
-    <button id="mute"><i class="fa-solid fa-volume-high"></i></button>
-    <button id="fullscreen"><i class="fa-solid fa-expand"></i></button>
+<!-- External Controls -->
+<div class="external-controls" id="external-controls">
+  <button id="playpause"><i class="fa-solid fa-play"></i></button>
+  <button id="mute"><i class="fa-solid fa-volume-high"></i></button>
+  <button id="fullscreen"><i class="fa-solid fa-expand"></i></button>
 
-    <div class="progress-container">
-      <div class="time" id="current-time">0:00</div>
-      <div class="progress-bar" id="progress-bar">
-        <div class="progress-filled" id="progress-filled"></div>
-      </div>
-      <div class="time" id="total-time">0:00</div>
+  <div class="progress-container">
+    <div class="time" id="current-time">0:00</div>
+    <div class="progress-bar" id="progress-bar">
+      <div class="progress-filled" id="progress-filled"></div>
     </div>
+    <div class="time" id="total-time">0:00</div>
   </div>
+</div>
 
-  <!-- Bottom Section -->
-  <div class="bottom-section">
-    <a id="download-btn" class="download-btn">⬇ Download</a>
-
-    <!-- Movie Suggestions Grid -->
-    <div class="suggestions">
-      <h2>More Like This</h2>
-      <div class="movies-grid">
-        <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-          <img src="https://image.tmdb.org/t/p/w500/weVXMD5QBGeQil4HEATZqAkXeEc.jpg" alt="Terminator">
-          <div class="movie-title">Terminator</div>
-        </div>
-        <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-          <img src="https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" alt="Spiderman No Way Home">
-          <div class="movie-title">Spiderman No Way Home</div>
-        </div>
-        <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-          <img src="https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg" alt="A Quiet Place">
-          <div class="movie-title">A Quiet Place</div>
-        </div>
+<div class="bottom-section">
+  <a id="download-btn" class="download-btn">⬇ Download</a>
+  <div class="suggestions">
+    <h2>More Like This</h2>
+    <div class="movies-grid">
+      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
+        <img src="https://image.tmdb.org/t/p/w500/weVXMD5QBGeQil4HEATZqAkXeEc.jpg" alt="Terminator">
+        <div class="movie-title">Terminator</div>
+      </div>
+      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
+        <img src="https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" alt="Spiderman No Way Home">
+        <div class="movie-title">Spiderman No Way Home</div>
+      </div>
+      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
+        <img src="https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg" alt="A Quiet Place">
+        <div class="movie-title">A Quiet Place</div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- MediaElement.js JS -->
-  <script src="https://cdn.jsdelivr.net/npm/mediaelement@7.0.5/build/mediaelement-and-player.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/mediaelement@7.0.5/build/mediaelement-and-player.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
-  <script>
-    const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
-    const video = document.getElementById('stream-media');
-    const downloadBtn = document.getElementById('download-btn');
-    const externalControls = document.getElementById('external-controls');
+<script>
+const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+const video = document.getElementById('stream-media');
+const downloadBtn = document.getElementById('download-btn');
+const externalControls = document.getElementById('external-controls');
 
-    downloadBtn.href = mediaLink;
-    downloadBtn.setAttribute("download", "");
+downloadBtn.href = mediaLink;
+downloadBtn.setAttribute("download", "");
 
-    // HLS support
-    if (mediaLink.endsWith('.m3u8') && Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(mediaLink);
-      hls.attachMedia(video);
-    } else {
-      video.src = mediaLink;
-    }
+// HLS support
+if (mediaLink.endsWith('.m3u8') && Hls.isSupported()) {
+  const hls = new Hls();
+  hls.loadSource(mediaLink);
+  hls.attachMedia(video);
+} else {
+  video.src = mediaLink;
+}
 
-    // Initialize MediaElement.js
-    const player = new MediaElementPlayer(video, {
-      features: [],
-      stretching: 'responsive'
-    });
+// MediaElement.js player
+new MediaElementPlayer(video, { features: [], stretching: 'responsive' });
 
-    // External controls
-    const playpauseBtn = document.getElementById('playpause');
-    const muteBtn = document.getElementById('mute');
-    const fullscreenBtn = document.getElementById('fullscreen');
-    const progressBar = document.getElementById('progress-bar');
-    const progressFilled = document.getElementById('progress-filled');
-    const currentTimeEl = document.getElementById('current-time');
-    const totalTimeEl = document.getElementById('total-time');
+// Elements
+const playpauseBtn = document.getElementById('playpause');
+const muteBtn = document.getElementById('mute');
+const fullscreenBtn = document.getElementById('fullscreen');
+const progressBar = document.getElementById('progress-bar');
+const progressFilled = document.getElementById('progress-filled');
+const currentTimeEl = document.getElementById('current-time');
+const totalTimeEl = document.getElementById('total-time');
 
-    function formatTime(seconds) {
-      const mins = Math.floor(seconds / 60);
-      const secs = Math.floor(seconds % 60);
-      return mins + ':' + (secs < 10 ? '0' + secs : secs);
-    }
+// Format time
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return mins + ':' + (secs < 10 ? '0'+secs : secs);
+}
 
-    // Play/Pause
-    playpauseBtn.addEventListener('click', () => {
-      if(video.paused) {
-        video.play();
-        playpauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-      } else {
-        video.pause();
-        playpauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-      }
-    });
+// Play/Pause
+playpauseBtn.addEventListener('click', () => {
+  if(video.paused){ video.play(); playpauseBtn.innerHTML='<i class="fa-solid fa-pause"></i>'; }
+  else { video.pause(); playpauseBtn.innerHTML='<i class="fa-solid fa-play"></i>'; }
+});
 
-    // Mute
-    muteBtn.addEventListener('click', () => {
-      video.muted = !video.muted;
-      muteBtn.innerHTML = video.muted 
-        ? '<i class="fa-solid fa-volume-xmark"></i>' 
-        : '<i class="fa-solid fa-volume-high"></i>';
-    });
+// Mute
+muteBtn.addEventListener('click', () => {
+  video.muted = !video.muted;
+  muteBtn.innerHTML = video.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+});
 
-    // Fullscreen
-    fullscreenBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        video.requestFullscreen();
-        fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
-      } else {
-        document.exitFullscreen();
-        fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
-      }
-    });
+// Fullscreen
+fullscreenBtn.addEventListener('click', () => {
+  if (!document.fullscreenElement) video.requestFullscreen();
+  else document.exitFullscreen();
+});
 
-    // Update progress and times
-    video.addEventListener('loadedmetadata', () => {
-      totalTimeEl.textContent = formatTime(video.duration);
-    });
+// Progress & Timer
+video.addEventListener('loadedmetadata', ()=>{ totalTimeEl.textContent=formatTime(video.duration); });
+video.addEventListener('timeupdate', ()=>{
+  const percent = (video.currentTime/video.duration)*100;
+  progressFilled.style.width = percent+'%';
+  currentTimeEl.textContent = formatTime(video.currentTime);
+});
+progressBar.addEventListener('click', e=>{
+  const rect = progressBar.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  video.currentTime = (clickX/rect.width)*video.duration;
+});
 
-    video.addEventListener('timeupdate', () => {
-      const percent = (video.currentTime / video.duration) * 100;
-      progressFilled.style.width = percent + '%';
-      currentTimeEl.textContent = formatTime(video.currentTime);
-    });
+// YouTube-style auto-hide
+let hideTimeout;
+function showControls(){
+  externalControls.classList.remove('hidden');
+  clearTimeout(hideTimeout);
+  if(!video.paused){
+    hideTimeout = setTimeout(()=>{ externalControls.classList.add('hidden'); }, 2500);
+  }
+}
+video.addEventListener('mousemove', showControls);
+video.addEventListener('touchmove', showControls);
+video.addEventListener('pause', ()=>{ externalControls.classList.remove('hidden'); });
+video.addEventListener('play', showControls);
+document.addEventListener('fullscreenchange', showControls);
 
-    // Seek functionality
-    progressBar.addEventListener('click', (e) => {
-      const rect = progressBar.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const width = rect.width;
-      const newTime = (clickX / width) * video.duration;
-      video.currentTime = newTime;
-    });
-
-    // Auto-hide controls in fullscreen
-    let hideControlsTimeout;
-    function showControls() {
-      externalControls.classList.remove('hidden');
-      clearTimeout(hideControlsTimeout);
-      hideControlsTimeout = setTimeout(() => {
-        if (document.fullscreenElement) {
-          externalControls.classList.add('hidden');
-        }
-      }, 3000);
-    }
-
-    video.addEventListener('mousemove', showControls);
-    video.addEventListener('touchmove', showControls);
-    document.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) externalControls.classList.remove('hidden');
-    });
-
-    // Initial call
-    showControls();
-  </script>
+// Initial
+showControls();
+</script>
 </body>
 </html>
