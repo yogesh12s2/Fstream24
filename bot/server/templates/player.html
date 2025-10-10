@@ -12,27 +12,7 @@
     font-family: Arial, sans-serif;
   }
   /* Preloader */
-  #preloader {
-    position: fixed;
-    inset: 0;
-    background: black;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-  }
-  #spinner {
-    width: 48px;
-    height: 48px;
-    border: 5px solid #fff;
-    border-top: 5px solid #ff0000;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
-  #preloader.fade-out { opacity: 0; pointer-events: none; transition: opacity 1s; }
-
+  
   /* Player */
   .player-container {
     position: relative;
@@ -113,10 +93,7 @@
 </head>
 <body>
 
-<!-- Preloader -->
-<div id="preloader">
-  <div id="spinner"></div>
-</div>
+
 
 <!-- Player -->
 <div class="player-container">
@@ -171,8 +148,7 @@
     downloadBtn.href = mediaLink;
     downloadBtn.setAttribute("download", "");
 
-    video.addEventListener("canplaythrough", function(){
-      preloader.classList.add("fade-out");
+  
     });
   } else {
     alert("Error: Media URL not provided");
@@ -180,5 +156,6 @@
 </script>
 </body>
 </html>
+
 
 
