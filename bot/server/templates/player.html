@@ -1,184 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>ChadStreamz Player</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body {
-    margin: 0;
-    background: #000;
-    color: #fff;
-    font-family: Arial, sans-serif;
-  }
-  /* Preloader */
-  #preloader {
-    position: fixed;
-    inset: 0;
-    background: black;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-  }
-  #spinner {
-    width: 48px;
-    height: 48px;
-    border: 5px solid #fff;
-    border-top: 5px solid #ff0000;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
-  #preloader.fade-out { opacity: 0; pointer-events: none; transition: opacity 1s; }
+  <meta charset="UTF-8">
+  <title>ChadStreamz Player</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  /* Player */
-  .player-container {
-    position: relative;
-    width: 100%;
-    background: black;
-  }
-  video {
-    width: 100%;
-    max-height: 70vh;
-    background: black;
-  }
-  .watermark {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 80px;
-    opacity: 0.7;
-    pointer-events: none;
-  }
+  <!-- Plyr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.css" />
 
-  /* Bottom Section */
-  .bottom-section {
-    padding: 20px;
-  }
-  .download-btn {
-    display: inline-block;
-    padding: 12px 20px;
-    background: #ff0000;
-    color: #fff;
-    text-decoration: none;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 6px;
-    transition: 0.3s;
-  }
-  .download-btn:hover {
-    background: #cc0000;
-  }
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
 
-  /* Suggestions Grid */
-  .suggestions {
-    margin-top: 30px;
-  }
-  .suggestions h2 {
-    font-size: 22px;
-    margin-bottom: 20px;
-  }
-  .movies-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 18px;
-  }
-  .movie-card {
-    cursor: pointer;
-    transition: transform 0.3s;
-  }
-  .movie-card:hover {
-    transform: scale(1.05);
-  }
-  .movie-card img {
-    width: 100%;
-    border-radius: 8px;
-    display: block;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-  }
-  .movie-title {
-    margin-top: 8px;
-    font-size: 14px;
-    text-align: center;
-    color: #ccc;
-  }
+    /* Player */
+    .player-container {
+      position: relative;
+      width: 100%;
+      background: black;
+    }
 
-  @media(max-width:768px){
-    .movie-title { font-size: 12px; }
-    .download-btn { font-size: 14px; padding: 10px 16px; }
-  }
-</style>
+    video {
+      width: 100%;
+      max-height: 70vh;
+      background: black;
+    }
+
+    .watermark {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 80px;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    /* Bottom Section */
+    .bottom-section {
+      padding: 20px;
+    }
+
+    .download-btn {
+      display: inline-block;
+      padding: 12px 20px;
+      background: #ff0000;
+      color: #fff;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      transition: 0.3s;
+    }
+
+    .download-btn:hover {
+      background: #cc0000;
+    }
+
+    /* Suggestions Grid */
+    .suggestions {
+      margin-top: 30px;
+    }
+
+    .suggestions h2 {
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .movies-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 18px;
+    }
+
+    .movie-card {
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    .movie-card:hover {
+      transform: scale(1.05);
+    }
+
+    .movie-card img {
+      width: 100%;
+      border-radius: 8px;
+      display: block;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    }
+
+    .movie-title {
+      margin-top: 8px;
+      font-size: 14px;
+      text-align: center;
+      color: #ccc;
+    }
+
+    @media(max-width:768px){
+      .movie-title { font-size: 12px; }
+      .download-btn { font-size: 14px; padding: 10px 16px; }
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- Preloader -->
-<div id="preloader">
-  <div id="spinner"></div>
-</div>
+  <!-- Player -->
+  <div class="player-container">
+    <video id="stream-media" playsinline controls></video>
+    <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
+  </div>
 
-<!-- Player -->
-<div class="player-container">
-  <video id="stream-media" controls preload="auto"></video>
-  <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
-</div>
+  <!-- Bottom Section -->
+  <div class="bottom-section">
+    <a id="download-btn" class="download-btn">⬇ Download</a>
 
-<!-- Bottom Section -->
-<div class="bottom-section">
-  <a id="download-btn" class="download-btn">⬇ Download</a>
-
-  <!-- Movie Suggestions Grid -->
-  <div class="suggestions">
-    <h2>More Like This</h2>
-    <div class="movies-grid">
-      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-        <img src="https://image.tmdb.org/t/p/w500/weVXMD5QBGeQil4HEATZqAkXeEc.jpg" alt="Avengers: Endgame">
-        <div class="movie-title">Terminator</div>
-      </div>
-      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-        <img src="https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" alt="Inception">
-        <div class="movie-title">Spiderman No Way Home</div>
-      </div>
-      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-        <img src="https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg" alt="The Godfather">
-        <div class="movie-title">A Quit Place</div>
-      </div>
-      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-        <img src="https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg" alt="Fight Club">
-        <div class="movie-title">Your Name</div>
-      </div>
-      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-        <img src="https://image.tmdb.org/t/p/w500/rJHC1RUORuUhtfNb4Npclx0xnOf.jpg" alt="Avatar">
-        <div class="movie-title">Uncharted</div>
-      </div>
-      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-        <img src="https://image.tmdb.org/t/p/w1280/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg" alt="Interstellar">
-        <div class="movie-title">Interstellar</div>
+    <!-- Movie Suggestions Grid -->
+    <div class="suggestions">
+      <h2>More Like This</h2>
+      <div class="movies-grid">
+        <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
+          <img src="https://image.tmdb.org/t/p/w500/weVXMD5QBGeQil4HEATZqAkXeEc.jpg" alt="Avengers: Endgame">
+          <div class="movie-title">Terminator</div>
+        </div>
+        <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
+          <img src="https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" alt="Inception">
+          <div class="movie-title">Spiderman No Way Home</div>
+        </div>
+        <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
+          <img src="https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg" alt="The Godfather">
+          <div class="movie-title">A Quiet Place</div>
+        </div>
+        <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
+          <img src="https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg" alt="Fight Club">
+          <div class="movie-title">Your Name</div>
+        </div>
+        <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
+          <img src="https://image.tmdb.org/t/p/w500/rJHC1RUORuUhtfNb4Npclx0xnOf.jpg" alt="Avatar">
+          <div class="movie-title">Uncharted</div>
+        </div>
+        <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
+          <img src="https://image.tmdb.org/t/p/w1280/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg" alt="Interstellar">
+          <div class="movie-title">Interstellar</div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<script>
-  var mediaLink = "{{ mediaLink }}"; // replace with your media URL
-  var video = document.getElementById("stream-media");
-  var downloadBtn = document.getElementById("download-btn");
-  var preloader = document.getElementById("preloader");
+  <!-- Plyr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.polyfilled.js"></script>
+  <script>
+    var mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 
-  if(mediaLink){
+    const video = document.getElementById("stream-media");
+    const downloadBtn = document.getElementById("download-btn");
+
+    // Set video source
     video.src = mediaLink;
     downloadBtn.href = mediaLink;
     downloadBtn.setAttribute("download", "");
 
-    video.addEventListener("canplaythrough", function(){
-      preloader.classList.add("fade-out");
+    // Initialize Plyr
+    const player = new Plyr(video, {
+      controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
+      autoplay: true
     });
-  } else {
-    alert("Error: Media URL not provided");
-  }
-</script>
+  </script>
+
 </body>
 </html>
-
-
