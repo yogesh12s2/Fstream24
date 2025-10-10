@@ -26,53 +26,6 @@ body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif;
   z-index: 10;
 }
 
-/* External Controls overlay */
-.external-controls {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-  opacity: 1;
-  transition: opacity 0.5s;
-  pointer-events: auto;
-  z-index: 100;
-}
-
-.external-controls.hidden { opacity: 0; pointer-events: none; }
-
-.external-controls button {
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900;
-  font-size: 22px;
-  color: #fff;
-  background: #222;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.external-controls button:hover { background: #ff0000; }
-.external-controls button:focus { outline: none; }
-
-.progress-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 60%;
-  max-width: 600px;
-}
-
-.time { font-size: 14px; color: #fff; min-width: 50px; text-align: center; }
-.progress-bar { flex: 1; height: 6px; background: #444; border-radius: 3px; cursor: pointer; position: relative; }
-.progress-filled { height: 100%; width: 0%; background: #ff0000; border-radius: 3px; }
-
 /* Bottom Section & Suggestions Grid */
 .bottom-section { padding: 20px; }
 .download-btn { display: inline-block; padding: 12px 20px; background: #ff0000; color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 6px; transition: 0.3s; }
@@ -89,30 +42,39 @@ body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif;
   .movie-title { font-size: 12px; }
   .download-btn { font-size: 14px; padding: 10px 16px; }
 }
+
+/* Custom FontAwesome for MediaElement buttons */
+.mejs__button button {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-size: 18px;
+  color: #fff;
+  background: none;
+  border: none;
+}
+
+.mejs__play button::before { content: "\f04b"; }       /* play */
+.mejs__pause button::before { content: "\f04c"; }      /* pause */
+.mejs__mute button::before { content: "\f6a9"; }       /* mute */
+.mejs__unmute button::before { content: "\f028"; }     /* volume on */
+.mejs__fullscreen button::before { content: "\f065"; } /* fullscreen */
+.mejs__unfullscreen button::before { content: "\f066"; } /* exit fullscreen */
+
+.mejs__time, .mejs__time-current, .mejs__time-total { color: #fff; }
+.mejs__time-current { color: #ff0000; }
+.mejs__horizontal-volume-slider .mejs__horizontal-volume-current { background: #ff0000; }
+.mejs__horizontal-volume-slider .mejs__horizontal-volume-total { background: #444; }
+.mejs__time-rail .mejs__time-current { background: #ff0000; }
+.mejs__time-rail .mejs__time-total { background: #444; }
 </style>
 </head>
 <body>
 
 <div class="player-container">
-  <video id="stream-media" preload="auto">
+  <video id="stream-media" controls preload="auto">
     <source src="{{ mediaLink }}" type="video/mp4">
   </video>
   <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
-</div>
-
-<!-- External Controls -->
-<div class="external-controls" id="external-controls">
-  <button id="playpause"><i class="fa-solid fa-play"></i></button>
-  <button id="mute"><i class="fa-solid fa-volume-high"></i></button>
-  <button id="fullscreen"><i class="fa-solid fa-expand"></i></button>
-
-  <div class="progress-container">
-    <div class="time" id="current-time">0:00</div>
-    <div class="progress-bar" id="progress-bar">
-      <div class="progress-filled" id="progress-filled"></div>
-    </div>
-    <div class="time" id="total-time">0:00</div>
-  </div>
 </div>
 
 <div class="bottom-section">
@@ -143,88 +105,28 @@ body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif;
 const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 const video = document.getElementById('stream-media');
 const downloadBtn = document.getElementById('download-btn');
-const externalControls = document.getElementById('external-controls');
 
 downloadBtn.href = mediaLink;
 downloadBtn.setAttribute("download", "");
 
 // HLS support
-if (mediaLink.endsWith('.m3u8') && Hls.isSupported()) {
+if(mediaLink.endsWith('.m3u8') && Hls.isSupported()){
   const hls = new Hls();
   hls.loadSource(mediaLink);
   hls.attachMedia(video);
-} else {
+}else{
   video.src = mediaLink;
 }
 
-// MediaElement.js
-new MediaElementPlayer(video, { features: [], stretching: 'responsive' });
-
-// Controls
-const playpauseBtn = document.getElementById('playpause');
-const muteBtn = document.getElementById('mute');
-const fullscreenBtn = document.getElementById('fullscreen');
-const progressBar = document.getElementById('progress-bar');
-const progressFilled = document.getElementById('progress-filled');
-const currentTimeEl = document.getElementById('current-time');
-const totalTimeEl = document.getElementById('total-time');
-
-function formatTime(seconds){
-  const mins = Math.floor(seconds/60);
-  const secs = Math.floor(seconds%60);
-  return mins + ':' + (secs<10 ? '0'+secs : secs);
-}
-
-// Play/Pause
-playpauseBtn.addEventListener('click', ()=>{
-  if(video.paused){ video.play(); playpauseBtn.innerHTML='<i class="fa-solid fa-pause"></i>'; }
-  else { video.pause(); playpauseBtn.innerHTML='<i class="fa-solid fa-play"></i>'; }
+// Initialize MediaElement.js player with auto-hide controls
+new MediaElementPlayer(video, {
+  features: ['playpause','progress','current','duration','volume','fullscreen'],
+  stretching: 'responsive',
+  enableAutosize: true,
+  alwaysShowControls: false,   // auto-hide like YouTube
+  autoHide: true,
+  autoHideTime: 2500           // hide controls after 2.5s inactivity
 });
-
-// Mute
-muteBtn.addEventListener('click', ()=>{
-  video.muted = !video.muted;
-  muteBtn.innerHTML = video.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
-});
-
-// Fullscreen
-fullscreenBtn.addEventListener('click', ()=>{
-  if(!document.fullscreenElement) video.requestFullscreen();
-  else document.exitFullscreen();
-});
-
-// Progress & Timer
-video.addEventListener('loadedmetadata', ()=>{ totalTimeEl.textContent = formatTime(video.duration); });
-video.addEventListener('timeupdate', ()=>{
-  const percent = (video.currentTime/video.duration)*100;
-  progressFilled.style.width = percent+'%';
-  currentTimeEl.textContent = formatTime(video.currentTime);
-});
-progressBar.addEventListener('click', e=>{
-  const rect = progressBar.getBoundingClientRect();
-  const clickX = e.clientX - rect.left;
-  video.currentTime = (clickX/rect.width)*video.duration;
-});
-
-// YouTube-style auto-hide
-let hideTimeout;
-function showControls(){
-  externalControls.classList.remove('hidden');
-  clearTimeout(hideTimeout);
-  if(!video.paused){
-    hideTimeout = setTimeout(()=>{ externalControls.classList.add('hidden'); }, 2500);
-  }
-}
-
-// Show controls on mousemove/touch over player container
-document.querySelector('.player-container').addEventListener('mousemove', showControls);
-document.querySelector('.player-container').addEventListener('touchmove', showControls);
-video.addEventListener('pause', ()=>{ externalControls.classList.remove('hidden'); });
-video.addEventListener('play', showControls);
-document.addEventListener('fullscreenchange', showControls);
-
-// Initial show
-showControls();
 </script>
 </body>
 </html>
