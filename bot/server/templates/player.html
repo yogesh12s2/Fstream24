@@ -115,6 +115,12 @@
       gap: 10px;
       justify-content: center;
       flex-wrap: wrap;
+      opacity: 1;
+      transition: opacity 0.5s;
+    }
+
+    .external-controls.hidden {
+      opacity: 0;
     }
 
     .external-controls button {
@@ -179,7 +185,7 @@
   </div>
 
   <!-- External Controls -->
-  <div class="external-controls">
+  <div class="external-controls" id="external-controls">
     <button id="playpause"><i class="fa-solid fa-play"></i></button>
     <button id="mute"><i class="fa-solid fa-volume-high"></i></button>
     <button id="fullscreen"><i class="fa-solid fa-expand"></i></button>
@@ -225,6 +231,7 @@
     const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
     const video = document.getElementById('stream-media');
     const downloadBtn = document.getElementById('download-btn');
+    const externalControls = document.getElementById('external-controls');
 
     downloadBtn.href = mediaLink;
     downloadBtn.setAttribute("download", "");
@@ -308,6 +315,27 @@
       const newTime = (clickX / width) * video.duration;
       video.currentTime = newTime;
     });
+
+    // Auto-hide controls in fullscreen
+    let hideControlsTimeout;
+    function showControls() {
+      externalControls.classList.remove('hidden');
+      clearTimeout(hideControlsTimeout);
+      hideControlsTimeout = setTimeout(() => {
+        if (document.fullscreenElement) {
+          externalControls.classList.add('hidden');
+        }
+      }, 3000);
+    }
+
+    video.addEventListener('mousemove', showControls);
+    video.addEventListener('touchmove', showControls);
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) externalControls.classList.remove('hidden');
+    });
+
+    // Initial call
+    showControls();
   </script>
 </body>
 </html>
