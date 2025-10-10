@@ -5,8 +5,8 @@
   <title>ChadStreamz Player</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Plyr CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.css" />
+  <!-- MediaElement.js CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mediaelement@7.0.5/build/mediaelementplayer.min.css">
 
   <style>
     body {
@@ -23,7 +23,7 @@
       background: black;
     }
 
-    video {
+    #stream-media {
       width: 100%;
       max-height: 70vh;
       background: black;
@@ -36,6 +36,7 @@
       width: 80px;
       opacity: 0.7;
       pointer-events: none;
+      z-index: 10;
     }
 
     /* Bottom Section */
@@ -104,12 +105,13 @@
     }
   </style>
 </head>
-
 <body>
 
   <!-- Player -->
   <div class="player-container">
-    <video id="stream-media" playsinline controls></video>
+    <video id="stream-media" controls preload="auto">
+      <source src="{{ mediaLink }}" type="video/mp4">
+    </video>
     <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
   </div>
 
@@ -122,23 +124,23 @@
       <h2>More Like This</h2>
       <div class="movies-grid">
         <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-          <img src="https://image.tmdb.org/t/p/w500/weVXMD5QBGeQil4HEATZqAkXeEc.jpg" alt="Avengers: Endgame">
+          <img src="https://image.tmdb.org/t/p/w500/weVXMD5QBGeQil4HEATZqAkXeEc.jpg" alt="Terminator">
           <div class="movie-title">Terminator</div>
         </div>
         <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-          <img src="https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" alt="Inception">
+          <img src="https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" alt="Spiderman No Way Home">
           <div class="movie-title">Spiderman No Way Home</div>
         </div>
         <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-          <img src="https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg" alt="The Godfather">
+          <img src="https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg" alt="A Quiet Place">
           <div class="movie-title">A Quiet Place</div>
         </div>
         <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-          <img src="https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg" alt="Fight Club">
+          <img src="https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg" alt="Your Name">
           <div class="movie-title">Your Name</div>
         </div>
         <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-          <img src="https://image.tmdb.org/t/p/w500/rJHC1RUORuUhtfNb4Npclx0xnOf.jpg" alt="Avatar">
+          <img src="https://image.tmdb.org/t/p/w500/rJHC1RUORuUhtfNb4Npclx0xnOf.jpg" alt="Uncharted">
           <div class="movie-title">Uncharted</div>
         </div>
         <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
@@ -149,25 +151,24 @@
     </div>
   </div>
 
-  <!-- Plyr JS -->
-  <script src="https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.polyfilled.js"></script>
+  <!-- MediaElement.js JS -->
+  <script src="https://cdn.jsdelivr.net/npm/mediaelement@7.0.5/build/mediaelement-and-player.min.js"></script>
   <script>
-    var mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+    const mediaLink = "{{ mediaLink }}" || "https://cdn.plyr.io/static/blank.mp4";
 
-    const video = document.getElementById("stream-media");
-    const downloadBtn = document.getElementById("download-btn");
+    const video = document.getElementById('stream-media');
+    const downloadBtn = document.getElementById('download-btn');
 
-    // Set video source
+    // Set video source dynamically
     video.src = mediaLink;
     downloadBtn.href = mediaLink;
     downloadBtn.setAttribute("download", "");
 
-    // Initialize Plyr
-    const player = new Plyr(video, {
-      controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
-      autoplay: true
+    // Initialize MediaElement.js
+    new MediaElementPlayer(video, {
+      features: ['playpause','progress','current','volume','fullscreen'],
+      stretching: 'responsive'
     });
   </script>
-
 </body>
 </html>
