@@ -5,8 +5,8 @@
   <title>ChadStreamz Player</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- MediaElement.js CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mediaelement@7.0.5/build/mediaelementplayer.min.css">
+  <!-- Shaka Player -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js"></script>
 
   <style>
     body {
@@ -109,7 +109,7 @@
 
   <!-- Player -->
   <div class="player-container">
-    <video id="stream-media" controls preload="auto"></video>
+    <video id="stream-media" controls autoplay></video>
     <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
   </div>
 
@@ -149,10 +149,6 @@
     </div>
   </div>
 
-  <!-- MediaElement.js JS + HLS Plugin -->
-  <script src="https://cdn.jsdelivr.net/npm/mediaelement@7.0.5/build/mediaelement-and-player.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
   <script>
     const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
     const video = document.getElementById('stream-media');
@@ -161,25 +157,32 @@
     downloadBtn.href = mediaLink;
     downloadBtn.setAttribute("download", "");
 
-    // Check if HLS stream
-    function isHls(url) {
-      return url.endsWith('.m3u8');
+    // Shaka Player setup
+    function initPlayer() {
+      const player = new shaka.Player(video);
+
+      // Attach error event
+      player.addEventListener('error', function(event) {
+        console.error('Shaka Player error', event);
+      });
+
+      // Load source
+      player.load(mediaLink).then(() => {
+        console.log('Video loaded successfully');
+      }).catch(err => {
+        console.error('Error loading video:', err);
+        // Fallback to native playback
+        video.src = mediaLink;
+      });
     }
 
-    if (isHls(mediaLink) && Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(mediaLink);
-      hls.attachMedia(video);
+    // Initialize Shaka
+    if (shaka.Player.isBrowserSupported()) {
+      initPlayer();
     } else {
+      // Fallback
       video.src = mediaLink;
     }
-
-    // Initialize MediaElement.js
-    new MediaElementPlayer(video, {
-      features: ['playpause','progress','current','volume','fullscreen'],
-      stretching: 'responsive',
-      alwaysShowControls: true
-    });
   </script>
 </body>
 </html>
