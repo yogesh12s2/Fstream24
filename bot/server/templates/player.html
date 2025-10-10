@@ -107,15 +107,14 @@
       .download-btn { font-size: 14px; padding: 10px 16px; }
     }
 
-    /* Custom MediaElement Controls hidden (we'll use external buttons) */
-    .mejs__controls { display: none !important; }
-
-    /* External control buttons */
+    /* Custom External Controls */
     .external-controls {
       margin-top: 10px;
       display: flex;
-      gap: 15px;
+      align-items: center;
+      gap: 10px;
       justify-content: center;
+      flex-wrap: wrap;
     }
 
     .external-controls button {
@@ -137,6 +136,36 @@
 
     .external-controls button:focus { outline: none; }
 
+    .progress-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 60%;
+      max-width: 600px;
+    }
+
+    .time {
+      font-size: 14px;
+      color: #fff;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 6px;
+      background: #444;
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .progress-filled {
+      height: 100%;
+      width: 0%;
+      background: #ff0000;
+      border-radius: 3px;
+    }
   </style>
 </head>
 <body>
@@ -154,6 +183,14 @@
     <button id="playpause"><i class="fa-solid fa-play"></i></button>
     <button id="mute"><i class="fa-solid fa-volume-high"></i></button>
     <button id="fullscreen"><i class="fa-solid fa-expand"></i></button>
+
+    <div class="progress-container">
+      <div class="time" id="current-time">0:00</div>
+      <div class="progress-bar" id="progress-bar">
+        <div class="progress-filled" id="progress-filled"></div>
+      </div>
+      <div class="time" id="total-time">0:00</div>
+    </div>
   </div>
 
   <!-- Bottom Section -->
@@ -211,7 +248,18 @@
     const playpauseBtn = document.getElementById('playpause');
     const muteBtn = document.getElementById('mute');
     const fullscreenBtn = document.getElementById('fullscreen');
+    const progressBar = document.getElementById('progress-bar');
+    const progressFilled = document.getElementById('progress-filled');
+    const currentTimeEl = document.getElementById('current-time');
+    const totalTimeEl = document.getElementById('total-time');
 
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return mins + ':' + (secs < 10 ? '0' + secs : secs);
+    }
+
+    // Play/Pause
     playpauseBtn.addEventListener('click', () => {
       if(video.paused) {
         video.play();
@@ -222,6 +270,7 @@
       }
     });
 
+    // Mute
     muteBtn.addEventListener('click', () => {
       video.muted = !video.muted;
       muteBtn.innerHTML = video.muted 
@@ -229,6 +278,7 @@
         : '<i class="fa-solid fa-volume-high"></i>';
     });
 
+    // Fullscreen
     fullscreenBtn.addEventListener('click', () => {
       if (!document.fullscreenElement) {
         video.requestFullscreen();
@@ -239,19 +289,25 @@
       }
     });
 
-    // Optional: hide external controls when video is in fullscreen after 3s inactivity
-    let controlTimeout;
-    function showControls() {
-      document.querySelector('.external-controls').style.opacity = '1';
-      clearTimeout(controlTimeout);
-      controlTimeout = setTimeout(() => {
-        document.querySelector('.external-controls').style.opacity = '0';
-      }, 3000);
-    }
+    // Update progress and times
+    video.addEventListener('loadedmetadata', () => {
+      totalTimeEl.textContent = formatTime(video.duration);
+    });
 
-    video.addEventListener('mousemove', showControls);
-    video.addEventListener('touchmove', showControls);
-    showControls();
+    video.addEventListener('timeupdate', () => {
+      const percent = (video.currentTime / video.duration) * 100;
+      progressFilled.style.width = percent + '%';
+      currentTimeEl.textContent = formatTime(video.currentTime);
+    });
+
+    // Seek functionality
+    progressBar.addEventListener('click', (e) => {
+      const rect = progressBar.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const width = rect.width;
+      const newTime = (clickX / width) * video.duration;
+      video.currentTime = newTime;
+    });
   </script>
 </body>
 </html>
