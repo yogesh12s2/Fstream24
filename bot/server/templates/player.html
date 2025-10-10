@@ -5,86 +5,52 @@
 <title>ChadStreamz Player</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- MediaElement.js CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mediaelement@7.0.5/build/mediaelementplayer.min.css">
+<!-- Video.js CSS -->
+<link href="https://vjs.zencdn.net/8.14.1/video-js.css" rel="stylesheet" />
 
-<!-- FontAwesome for custom icons -->
+<!-- FontAwesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif; }
-.player-container { position: relative; width: 100%; background: black; }
-
-#stream-media {
-  width: 100%;
-  max-height: 70vh; /* Only limit in normal mode */
-  background: black;
-}
-
-.player-container.fullscreen #stream-media {
-  max-height: 100vh !important; /* Fullscreen override */
-}
-
+body { margin:0; background:#000; color:#fff; font-family:Arial,sans-serif; }
+.player-container { position: relative; width: 100%; max-width: 100%; }
+.video-js { width: 100%; height: 70vh; }
 .watermark {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 80px;
-  opacity: 0.7;
-  pointer-events: none;
-  z-index: 10;
+  top:12px; right:12px;
+  width:80px;
+  opacity:0.7;
+  pointer-events:none;
+  z-index:10;
 }
 
 /* Bottom Section & Suggestions Grid */
 .bottom-section { padding: 20px; }
-.download-btn { display: inline-block; padding: 12px 20px; background: #ff0000; color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 6px; transition: 0.3s; }
-.download-btn:hover { background: #cc0000; }
-.suggestions { margin-top: 30px; }
-.suggestions h2 { font-size: 22px; margin-bottom: 20px; }
-.movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
-.movie-card { cursor: pointer; transition: transform 0.3s; }
-.movie-card:hover { transform: scale(1.05); }
-.movie-card img { width: 100%; border-radius: 8px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
-.movie-title { margin-top: 8px; font-size: 14px; text-align: center; color: #ccc; }
+.download-btn { display: inline-block; padding: 12px 20px; background: #ff0000; color:#fff; text-decoration:none; font-size:16px; font-weight:bold; border-radius:6px; transition:0.3s; }
+.download-btn:hover { background:#cc0000; }
+.suggestions { margin-top:30px; }
+.suggestions h2 { font-size:22px; margin-bottom:20px; }
+.movies-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:18px; }
+.movie-card { cursor:pointer; transition:transform 0.3s; }
+.movie-card:hover { transform:scale(1.05); }
+.movie-card img { width:100%; border-radius:8px; display:block; box-shadow:0 4px 8px rgba(0,0,0,0.5); }
+.movie-title { margin-top:8px; font-size:14px; text-align:center; color:#ccc; }
+@media(max-width:768px){ .movie-title{font-size:12px;} .download-btn{font-size:14px; padding:10px 16px;} }
 
-@media(max-width:768px){
-  .movie-title { font-size: 12px; }
-  .download-btn { font-size: 14px; padding: 10px 16px; }
-}
+/* Video.js custom icons */
+.vjs-play-control .vjs-icon-placeholder::before { content: "\f04b"; font-family:"Font Awesome 6 Free"; font-weight:900; font-size:18px; }
+.vjs-play-control.vjs-playing .vjs-icon-placeholder::before { content:"\f04c"; }
+.vjs-mute-control.vjs-vol-0 .vjs-icon-placeholder::before { content:"\f6a9"; }
+.vjs-mute-control .vjs-icon-placeholder::before { content:"\f028"; }
+.vjs-fullscreen-control .vjs-icon-placeholder::before { content:"\f065"; }
+.vjs-fullscreen-control.vjs-fullscreen .vjs-icon-placeholder::before { content:"\f066"; }
 
-/* Custom FontAwesome for MediaElement buttons */
-.mejs__button button {
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900;
-  font-size: 18px;
-  color: #fff;
-  background: none;
-  border: none;
-}
-
-.mejs__play button::before { content: "\f04b"; }       /* play */
-.mejs__pause button::before { content: "\f04c"; }      /* pause */
-.mejs__mute button::before { content: "\f6a9"; }       /* mute */
-.mejs__unmute button::before { content: "\f028"; }     /* volume on */
-.mejs__fullscreen button::before { content: "\f065"; } /* fullscreen */
-.mejs__unfullscreen button::before { content: "\f066"; } /* exit fullscreen */
-
-.mejs__time, .mejs__time-current, .mejs__time-total { color: #fff; }
-.mejs__time-current { color: #ff0000; }
-.mejs__horizontal-volume-slider .mejs__horizontal-volume-current { background: #ff0000; }
-.mejs__horizontal-volume-slider .mejs__horizontal-volume-total { background: #444; }
-.mejs__time-rail .mejs__time-current { background: #ff0000; }
-.mejs__time-rail .mejs__time-total { background: #444; }
-
-.mejs__pause svg.mejs__icon-pause, .mejs__play svg.mejs__icon-play, .mejs__replay svg.mejs__icon-replay { display: none; }
-.mejs__mute .mejs__icon-mute, .mejs__unmute .mejs__icon-unmute { display: none; }
-.mejs__fullscreen svg.mejs__icon-fullscreen { display: none; }
 </style>
 </head>
 <body>
 
-<div class="player-container" id="player-container">
-  <video id="stream-media" controls preload="auto">
+<div class="player-container">
+  <video id="my-video" class="video-js vjs-big-play-centered" controls preload="auto">
     <source src="{{ mediaLink }}" type="video/mp4">
   </video>
   <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
@@ -111,45 +77,39 @@ body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif;
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/mediaelement@7.0.5/build/mediaelement-and-player.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<!-- Video.js JS -->
+<script src="https://vjs.zencdn.net/8.14.1/video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/videojs-contrib-hls@5.15.0/dist/videojs-contrib-hls.min.js"></script>
 
 <script>
 const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
-const video = document.getElementById('stream-media');
+const videoEl = document.getElementById('my-video');
 const downloadBtn = document.getElementById('download-btn');
-const container = document.getElementById('player-container');
-
 downloadBtn.href = mediaLink;
-downloadBtn.setAttribute("download", "");
+downloadBtn.setAttribute("download","");
 
-// HLS support
-if(mediaLink.endsWith('.m3u8') && Hls.isSupported()){
-  const hls = new Hls();
-  hls.loadSource(mediaLink);
-  hls.attachMedia(video);
+// Initialize Video.js
+const player = videojs('my-video', {
+  autoplay: false,
+  controls: true,
+  preload: 'auto',
+  fluid: true,
+  controlBar: {
+    volumePanel: { inline: false }
+  },
+});
+
+// HLS support (if .m3u8)
+if(mediaLink.endsWith('.m3u8') && videojs.Hls){
+  player.src({ src: mediaLink, type: 'application/x-mpegURL' });
 }else{
-  video.src = mediaLink;
+  player.src({ src: mediaLink, type: 'video/mp4' });
 }
 
-// Initialize MediaElement.js
-const player = new MediaElementPlayer(video, {
-  features: ['playpause','progress','current','duration','volume','fullscreen'],
-  stretching: 'responsive',
-  enableAutosize: true,
-  alwaysShowControls: false,
-  autoHide: true,
-  autoHideTime: 2500
-});
+// Auto-hide controls like YouTube
+player.on('userinactive', () => { /* controls auto-hide */ });
+player.on('useractive', () => { /* controls show */ });
 
-// Fix fullscreen container
-video.addEventListener('fullscreenchange', () => {
-  if(document.fullscreenElement){
-    container.classList.add('fullscreen');
-  } else {
-    container.classList.remove('fullscreen');
-  }
-});
 </script>
 </body>
 </html>
