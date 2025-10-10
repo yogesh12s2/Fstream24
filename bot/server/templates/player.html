@@ -14,7 +14,7 @@
 <style>
 body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif; }
 .player-container { position: relative; width: 100%; background: black; }
-#stream-media { width: 100%; max-height: 70vh; background: black; }
+#stream-media { width: 100%; height: auto; background: black; }
 
 .watermark {
   position: absolute;
@@ -52,13 +52,12 @@ body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif;
   background: none;
   border: none;
 }
-
-.mejs__play button::before { content: "\f04b"; }       /* play */
-.mejs__pause button::before { content: "\f04c"; }      /* pause */
-.mejs__mute button::before { content: "\f6a9"; }       /* mute */
-.mejs__unmute button::before { content: "\f028"; }     /* volume on */
-.mejs__fullscreen button::before { content: "\f065"; } /* fullscreen */
-.mejs__unfullscreen button::before { content: "\f066"; } /* exit fullscreen */
+.mejs__play button::before { content: "\f04b"; }       
+.mejs__pause button::before { content: "\f04c"; }      
+.mejs__mute button::before { content: "\f6a9"; }       
+.mejs__unmute button::before { content: "\f028"; }     
+.mejs__fullscreen button::before { content: "\f065"; } 
+.mejs__unfullscreen button::before { content: "\f066"; }
 
 .mejs__time, .mejs__time-current, .mejs__time-total { color: #fff; }
 .mejs__time-current { color: #ff0000; }
@@ -67,14 +66,19 @@ body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif;
 .mejs__time-rail .mejs__time-current { background: #ff0000; }
 .mejs__time-rail .mejs__time-total { background: #444; }
 
-  .mejs__pause svg.mejs__icon-pause, .mejs__play svg.mejs__icon-play, .mejs__replay svg.mejs__icon-replay {
-    display: none;
+.mejs__pause svg.mejs__icon-pause, .mejs__play svg.mejs__icon-play, .mejs__replay svg.mejs__icon-replay { display: none; }
+.mejs__mute .mejs__icon-mute, .mejs__unmute .mejs__icon-unmute { display: none; }
+.mejs__fullscreen svg.mejs__icon-fullscreen { display: none; }
+
+/* Fullscreen overrides */
+.mejs__container.fullscreen {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
 }
-  .mejs__mute .mejs__icon-mute, .mejs__unmute .mejs__icon-unmute {
-    display: none;
-}
-  .mejs__fullscreen svg.mejs__icon-fullscreen {
-    display: none;
+.mejs__video {
+  width: 100% !important;
+  height: 100% !important;
 }
 </style>
 </head>
@@ -128,16 +132,15 @@ if(mediaLink.endsWith('.m3u8') && Hls.isSupported()){
   video.src = mediaLink;
 }
 
-// Initialize MediaElement.js player with auto-hide controls
+// Initialize MediaElement.js player
 new MediaElementPlayer(video, {
   features: ['playpause','progress','current','duration','volume','fullscreen'],
   stretching: 'responsive',
   enableAutosize: true,
-  alwaysShowControls: false,   // auto-hide like YouTube
+  alwaysShowControls: false,
   autoHide: true,
-  autoHideTime: 2500           // hide controls after 2.5s inactivity
+  autoHideTime: 2500
 });
 </script>
 </body>
 </html>
-
