@@ -107,48 +107,53 @@
       .download-btn { font-size: 14px; padding: 10px 16px; }
     }
 
-    /* Custom MediaElement Controls */
-    .mejs__button button {
-      font-family: "Font Awesome 6 Free";
-      font-weight: 900;
-      font-size: 18px;
-      color: #fff;
-      background: none;
-      border: none;
-      padding: 0 6px;
+    /* Custom MediaElement Controls hidden (we'll use external buttons) */
+    .mejs__controls { display: none !important; }
+
+    /* External control buttons */
+    .external-controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 15px;
+      justify-content: center;
     }
 
-  .mejs__play button::before { content: "\f04b"; }       /* play */
-    .mejs__pause button::before { content: "\f04c"; }      /* pause */
-    .mejs__mute button::before { content: "\f6a9"; }       /* volume mute */
-    .mejs__unmute button::before { content: "\f028"; }     /* volume on */
-    .mejs__fullscreen button::before { content: "\f065"; } /* fullscreen */
-    .mejs__unfullscreen button::before { content: "\f066"; } /* exit fullscreen */
-    .mejs__time { color: #fff; }
-    .mejs__time-current { color: #ff0000; }
-    .mejs__horizontal-volume-slider .mejs__horizontal-volume-current { background: #ff0000; }
-    .mejs__horizontal-volume-slider .mejs__horizontal-volume-total { background: #444; }
-    .mejs__time-rail .mejs__time-current { background: #ff0000; }
-    .mejs__time-rail .mejs__time-total { background: #444; }
-    .mejs__pause svg.mejs__icon-pause, .mejs__play svg.mejs__icon-play, .mejs__replay svg.mejs__icon-replay {
-    display: none;
-}
-    .mejs__mute .mejs__icon-mute, .mejs__unmute .mejs__icon-unmute {
-    display: none;
-}
-    .mejs__fullscreen svg.mejs__icon-fullscreen {
-    display: none;
-}
+    .external-controls button {
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      font-size: 22px;
+      color: #fff;
+      background: #222;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .external-controls button:hover {
+      background: #ff0000;
+    }
+
+    .external-controls button:focus { outline: none; }
+
   </style>
 </head>
 <body>
 
   <!-- Player -->
   <div class="player-container">
-    <video id="stream-media" controls preload="auto">
+    <video id="stream-media" preload="auto">
       <source src="{{ mediaLink }}" type="video/mp4">
     </video>
     <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
+  </div>
+
+  <!-- External Controls -->
+  <div class="external-controls">
+    <button id="playpause"><i class="fa-solid fa-play"></i></button>
+    <button id="mute"><i class="fa-solid fa-volume-high"></i></button>
+    <button id="fullscreen"><i class="fa-solid fa-expand"></i></button>
   </div>
 
   <!-- Bottom Section -->
@@ -196,16 +201,57 @@
       video.src = mediaLink;
     }
 
-    // Initialize MediaElement.js with custom controls
-    new MediaElementPlayer(video, {
-      features: ['playpause','progress','current','volume','fullscreen'],
-      stretching: 'responsive',
-      alwaysShowControls: true
+    // Initialize MediaElement.js
+    const player = new MediaElementPlayer(video, {
+      features: [],
+      stretching: 'responsive'
     });
+
+    // External controls
+    const playpauseBtn = document.getElementById('playpause');
+    const muteBtn = document.getElementById('mute');
+    const fullscreenBtn = document.getElementById('fullscreen');
+
+    playpauseBtn.addEventListener('click', () => {
+      if(video.paused) {
+        video.play();
+        playpauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+      } else {
+        video.pause();
+        playpauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+      }
+    });
+
+    muteBtn.addEventListener('click', () => {
+      video.muted = !video.muted;
+      muteBtn.innerHTML = video.muted 
+        ? '<i class="fa-solid fa-volume-xmark"></i>' 
+        : '<i class="fa-solid fa-volume-high"></i>';
+    });
+
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        video.requestFullscreen();
+        fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+      } else {
+        document.exitFullscreen();
+        fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+      }
+    });
+
+    // Optional: hide external controls when video is in fullscreen after 3s inactivity
+    let controlTimeout;
+    function showControls() {
+      document.querySelector('.external-controls').style.opacity = '1';
+      clearTimeout(controlTimeout);
+      controlTimeout = setTimeout(() => {
+        document.querySelector('.external-controls').style.opacity = '0';
+      }, 3000);
+    }
+
+    video.addEventListener('mousemove', showControls);
+    video.addEventListener('touchmove', showControls);
+    showControls();
   </script>
 </body>
 </html>
-
-
-
-
