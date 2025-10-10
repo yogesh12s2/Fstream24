@@ -12,79 +12,83 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-  body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif; }
-  .player-container { position: relative; width: 100%; background: black; }
-  #stream-media { width: 100%; max-height: 70vh; background: black; }
+body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif; }
+.player-container { position: relative; width: 100%; background: black; }
+#stream-media { width: 100%; max-height: 70vh; background: black; }
 
-  .watermark {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 80px;
-    opacity: 0.7;
-    pointer-events: none;
-    z-index: 10;
-  }
+.watermark {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 80px;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 10;
+}
 
-  /* External Controls */
-  .external-controls {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
-    opacity: 1;
-    transition: opacity 0.5s;
-    pointer-events: auto;
-  }
+/* External Controls overlay */
+.external-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 1;
+  transition: opacity 0.5s;
+  pointer-events: auto;
+  z-index: 100;
+}
 
-  .external-controls.hidden { opacity: 0; pointer-events: none; }
+.external-controls.hidden { opacity: 0; pointer-events: none; }
 
-  .external-controls button {
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    font-size: 22px;
-    color: #fff;
-    background: #222;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: 0.3s;
-  }
+.external-controls button {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-size: 22px;
+  color: #fff;
+  background: #222;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
 
-  .external-controls button:hover { background: #ff0000; }
-  .external-controls button:focus { outline: none; }
+.external-controls button:hover { background: #ff0000; }
+.external-controls button:focus { outline: none; }
 
-  .progress-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 60%;
-    max-width: 600px;
-  }
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 60%;
+  max-width: 600px;
+}
 
-  .time { font-size: 14px; color: #fff; min-width: 50px; text-align: center; }
-  .progress-bar { flex: 1; height: 6px; background: #444; border-radius: 3px; cursor: pointer; position: relative; }
-  .progress-filled { height: 100%; width: 0%; background: #ff0000; border-radius: 3px; }
+.time { font-size: 14px; color: #fff; min-width: 50px; text-align: center; }
+.progress-bar { flex: 1; height: 6px; background: #444; border-radius: 3px; cursor: pointer; position: relative; }
+.progress-filled { height: 100%; width: 0%; background: #ff0000; border-radius: 3px; }
 
-  /* Bottom Section & Suggestions Grid */
-  .bottom-section { padding: 20px; }
-  .download-btn { display: inline-block; padding: 12px 20px; background: #ff0000; color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 6px; transition: 0.3s; }
-  .download-btn:hover { background: #cc0000; }
-  .suggestions { margin-top: 30px; }
-  .suggestions h2 { font-size: 22px; margin-bottom: 20px; }
-  .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
-  .movie-card { cursor: pointer; transition: transform 0.3s; }
-  .movie-card:hover { transform: scale(1.05); }
-  .movie-card img { width: 100%; border-radius: 8px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
-  .movie-title { margin-top: 8px; font-size: 14px; text-align: center; color: #ccc; }
+/* Bottom Section & Suggestions Grid */
+.bottom-section { padding: 20px; }
+.download-btn { display: inline-block; padding: 12px 20px; background: #ff0000; color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 6px; transition: 0.3s; }
+.download-btn:hover { background: #cc0000; }
+.suggestions { margin-top: 30px; }
+.suggestions h2 { font-size: 22px; margin-bottom: 20px; }
+.movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
+.movie-card { cursor: pointer; transition: transform 0.3s; }
+.movie-card:hover { transform: scale(1.05); }
+.movie-card img { width: 100%; border-radius: 8px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+.movie-title { margin-top: 8px; font-size: 14px; text-align: center; color: #ccc; }
 
-  @media(max-width:768px){
-    .movie-title { font-size: 12px; }
-    .download-btn { font-size: 14px; padding: 10px 16px; }
-  }
+@media(max-width:768px){
+  .movie-title { font-size: 12px; }
+  .download-btn { font-size: 14px; padding: 10px 16px; }
+}
 </style>
 </head>
 <body>
@@ -153,10 +157,10 @@ if (mediaLink.endsWith('.m3u8') && Hls.isSupported()) {
   video.src = mediaLink;
 }
 
-// MediaElement.js player
+// MediaElement.js
 new MediaElementPlayer(video, { features: [], stretching: 'responsive' });
 
-// Elements
+// Controls
 const playpauseBtn = document.getElementById('playpause');
 const muteBtn = document.getElementById('mute');
 const fullscreenBtn = document.getElementById('fullscreen');
@@ -165,33 +169,32 @@ const progressFilled = document.getElementById('progress-filled');
 const currentTimeEl = document.getElementById('current-time');
 const totalTimeEl = document.getElementById('total-time');
 
-// Format time
-function formatTime(seconds) {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return mins + ':' + (secs < 10 ? '0'+secs : secs);
+function formatTime(seconds){
+  const mins = Math.floor(seconds/60);
+  const secs = Math.floor(seconds%60);
+  return mins + ':' + (secs<10 ? '0'+secs : secs);
 }
 
 // Play/Pause
-playpauseBtn.addEventListener('click', () => {
+playpauseBtn.addEventListener('click', ()=>{
   if(video.paused){ video.play(); playpauseBtn.innerHTML='<i class="fa-solid fa-pause"></i>'; }
   else { video.pause(); playpauseBtn.innerHTML='<i class="fa-solid fa-play"></i>'; }
 });
 
 // Mute
-muteBtn.addEventListener('click', () => {
+muteBtn.addEventListener('click', ()=>{
   video.muted = !video.muted;
   muteBtn.innerHTML = video.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
 });
 
 // Fullscreen
-fullscreenBtn.addEventListener('click', () => {
-  if (!document.fullscreenElement) video.requestFullscreen();
+fullscreenBtn.addEventListener('click', ()=>{
+  if(!document.fullscreenElement) video.requestFullscreen();
   else document.exitFullscreen();
 });
 
 // Progress & Timer
-video.addEventListener('loadedmetadata', ()=>{ totalTimeEl.textContent=formatTime(video.duration); });
+video.addEventListener('loadedmetadata', ()=>{ totalTimeEl.textContent = formatTime(video.duration); });
 video.addEventListener('timeupdate', ()=>{
   const percent = (video.currentTime/video.duration)*100;
   progressFilled.style.width = percent+'%';
@@ -212,13 +215,15 @@ function showControls(){
     hideTimeout = setTimeout(()=>{ externalControls.classList.add('hidden'); }, 2500);
   }
 }
-video.addEventListener('mousemove', showControls);
-video.addEventListener('touchmove', showControls);
+
+// Show controls on mousemove/touch over player container
+document.querySelector('.player-container').addEventListener('mousemove', showControls);
+document.querySelector('.player-container').addEventListener('touchmove', showControls);
 video.addEventListener('pause', ()=>{ externalControls.classList.remove('hidden'); });
 video.addEventListener('play', showControls);
 document.addEventListener('fullscreenchange', showControls);
 
-// Initial
+// Initial show
 showControls();
 </script>
 </body>
