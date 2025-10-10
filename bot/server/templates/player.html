@@ -66,6 +66,16 @@ body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif;
 .mejs__horizontal-volume-slider .mejs__horizontal-volume-total { background: #444; }
 .mejs__time-rail .mejs__time-current { background: #ff0000; }
 .mejs__time-rail .mejs__time-total { background: #444; }
+
+  .mejs__pause svg.mejs__icon-pause, .mejs__play svg.mejs__icon-play, .mejs__replay svg.mejs__icon-replay {
+    display: none;
+}
+  .mejs__mute .mejs__icon-mute, .mejs__unmute .mejs__icon-unmute {
+    display: none;
+}
+  .mejs__fullscreen svg.mejs__icon-fullscreen {
+    display: none;
+}
 </style>
 </head>
 <body>
@@ -130,3 +140,4 @@ new MediaElementPlayer(video, {
 </script>
 </body>
 </html>
+
