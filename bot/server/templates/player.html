@@ -4,54 +4,97 @@
 <meta charset="UTF-8">
 <title>ChadStreamz Player</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- Video.js CSS -->
-<link href="https://vjs.zencdn.net/8.14.1/video-js.css" rel="stylesheet" />
-
-<!-- FontAwesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 <style>
-body { margin:0; background:#000; color:#fff; font-family:Arial,sans-serif; }
-.player-container { position: relative; width: 100%; max-width: 100%; }
-.video-js { width: 100%; height: 70vh; }
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+.player-container {
+  position: relative;
+  width: 100%;
+  background: black;
+}
+#stream-media {
+  width: 100%;
+  height: 50vh;
+  background: black;
+  outline: none;
+}
+
 .watermark {
   position: absolute;
-  top:12px; right:12px;
-  width:80px;
-  opacity:0.7;
-  pointer-events:none;
-  z-index:10;
+  top: 12px;
+  right: 12px;
+  width: 80px;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 10;
 }
 
 /* Bottom Section & Suggestions Grid */
-.bottom-section { padding: 20px; }
-.download-btn { display: inline-block; padding: 12px 20px; background: #ff0000; color:#fff; text-decoration:none; font-size:16px; font-weight:bold; border-radius:6px; transition:0.3s; }
-.download-btn:hover { background:#cc0000; }
-.suggestions { margin-top:30px; }
-.suggestions h2 { font-size:22px; margin-bottom:20px; }
-.movies-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:18px; }
-.movie-card { cursor:pointer; transition:transform 0.3s; }
-.movie-card:hover { transform:scale(1.05); }
-.movie-card img { width:100%; border-radius:8px; display:block; box-shadow:0 4px 8px rgba(0,0,0,0.5); }
-.movie-title { margin-top:8px; font-size:14px; text-align:center; color:#ccc; }
-@media(max-width:768px){ .movie-title{font-size:12px;} .download-btn{font-size:14px; padding:10px 16px;} }
+.bottom-section {
+  padding: 20px;
+}
+.download-btn {
+  display: inline-block;
+  padding: 12px 20px;
+  background: #ff0000;
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: 0.3s;
+}
+.download-btn:hover {
+  background: #cc0000;
+}
+.suggestions {
+  margin-top: 30px;
+}
+.suggestions h2 {
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+.movies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 18px;
+}
+.movie-card {
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+.movie-card:hover {
+  transform: scale(1.05);
+}
+.movie-card img {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+}
+.movie-title {
+  margin-top: 8px;
+  font-size: 14px;
+  text-align: center;
+  color: #ccc;
+}
 
-/* Video.js custom icons */
-.vjs-play-control .vjs-icon-placeholder::before { content: "\f04b"; font-family:"Font Awesome 6 Free"; font-weight:900; font-size:18px; }
-.vjs-play-control.vjs-playing .vjs-icon-placeholder::before { content:"\f04c"; }
-.vjs-mute-control.vjs-vol-0 .vjs-icon-placeholder::before { content:"\f6a9"; }
-.vjs-mute-control .vjs-icon-placeholder::before { content:"\f028"; }
-.vjs-fullscreen-control .vjs-icon-placeholder::before { content:"\f065"; }
-.vjs-fullscreen-control.vjs-fullscreen .vjs-icon-placeholder::before { content:"\f066"; }
-
+@media(max-width:768px){
+  .movie-title { font-size: 12px; }
+  .download-btn { font-size: 14px; padding: 10px 16px; }
+}
 </style>
 </head>
 <body>
 
 <div class="player-container">
-  <video id="my-video" class="video-js vjs-big-play-centered" controls preload="auto">
+  <video id="stream-media" controls preload="auto" poster="https://chadstreamz.sbs/assets/images/log2.png">
     <source src="{{ mediaLink }}" type="video/mp4">
+    Your browser does not support the video tag.
   </video>
   <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
 </div>
@@ -77,39 +120,35 @@ body { margin:0; background:#000; color:#fff; font-family:Arial,sans-serif; }
   </div>
 </div>
 
-<!-- Video.js JS -->
-<script src="https://vjs.zencdn.net/8.14.1/video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/videojs-contrib-hls@5.15.0/dist/videojs-contrib-hls.min.js"></script>
-
 <script>
 const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
-const videoEl = document.getElementById('my-video');
+const video = document.getElementById('stream-media');
 const downloadBtn = document.getElementById('download-btn');
+
+// set video src
+video.src = mediaLink;
+
+// enable download
 downloadBtn.href = mediaLink;
-downloadBtn.setAttribute("download","");
+downloadBtn.setAttribute("download", "");
 
-// Initialize Video.js
-const player = videojs('my-video', {
-  autoplay: false,
-  controls: true,
-  preload: 'auto',
-  fluid: true,
-  controlBar: {
-    volumePanel: { inline: false }
-  },
-});
-
-// HLS support (if .m3u8)
-if(mediaLink.endsWith('.m3u8') && videojs.Hls){
-  player.src({ src: mediaLink, type: 'application/x-mpegURL' });
-}else{
-  player.src({ src: mediaLink, type: 'video/mp4' });
+// handle HLS (.m3u8) fallback for browsers that support it
+if (mediaLink.endsWith('.m3u8') && video.canPlayType('application/vnd.apple.mpegurl')) {
+  video.src = mediaLink;
+} else if (mediaLink.endsWith('.m3u8')) {
+  // if not supported, use Hls.js dynamically
+  const script = document.createElement('script');
+  script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
+  script.onload = () => {
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(mediaLink);
+      hls.attachMedia(video);
+    }
+  };
+  document.body.appendChild(script);
 }
-
-// Auto-hide controls like YouTube
-player.on('userinactive', () => { /* controls auto-hide */ });
-player.on('useractive', () => { /* controls show */ });
-
 </script>
+
 </body>
 </html>
