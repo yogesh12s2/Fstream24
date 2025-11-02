@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -31,30 +31,6 @@ body {
   pointer-events: none;
   z-index: 10;
 }
-
-/* --- Loader Spinner CSS --- */
-.player-container .loader {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  /* Translate is centered on the element, so -50% centers it perfectly */
-  transform: translate(-50%, -50%);
-  width: 50px;
-  height: 50px;
-  border: 5px solid #444; /* Grey track */
-  border-top-color: #ff0000; /* Red spinner color */
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  z-index: 15;
-  display: none; /* Hidden by default */
-}
-@keyframes spin {
-  to {
-    /* Full 360 degree rotation */
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
 .subtitle-btn {
   margin-top:10px;
   position: absolute;
@@ -92,31 +68,6 @@ body {
 .download-btn:hover {
   background: #cc0000;
 }
-
-/* --- Quality Selector CSS --- */
-.quality-selector {
-  margin-top: 15px;
-}
-.quality-selector span {
-  font-size: 16px;
-  margin-right: 10px;
-}
-.quality-btn {
-  background: #333;
-  color: #fff;
-  border: 1px solid #555;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  margin-right: 5px; /* Added margin */
-}
-.quality-btn.active,
-.quality-btn:hover {
-  background: #ff0000;
-  border-color: #ff0000;
-}
-
 .suggestions {
   margin-top: 30px;
 }
@@ -158,27 +109,21 @@ body {
 <body>
 
 <div class="player-container">
-  <video id="stream-media" controls preload="metadata" playsinline poster="https://chadstreamz.sbs/assets/images/log2.png">
+  <video id="stream-media" controls preload="auto" poster="https://chadstreamz.sbs/assets/images/log2.png">
+    <source src="{{ mediaLink }}" type="video/mp4">
+    <!-- Subtitle example -->
     <track id="subtitle-track" label="English" kind="subtitles" srclang="en" src="{{ subtitleLink }}" default>
     Your browser does not support the video tag.
   </video>
-  
-  <div class="loader" id="video-loader"></div>
 
   <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
-  
+
+  <!-- Subtitle toggle button -->
   <button id="toggle-subs" class="subtitle-btn">Subtitles: ON</button>
 </div>
 
 <div class="bottom-section">
   <a id="download-btn" class="download-btn">⬇ Download</a>
-
-  <div class="quality-selector">
-    <span>Quality:</span>
-    <button class="quality-btn active" data-quality-src="{{ mediaLink }}">Auto</button>
-    
-    </div>
-
   <div class="suggestions">
     <h2>More Like This</h2>
     <div class="movies-grid">
@@ -199,60 +144,43 @@ body {
 </div>
 
 <script>
-// --- CONFIGURATION ---
-// These are your placeholders. The "||" provides a fallback for testing.
-const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"; // HLS test
-// const mediaLink = "{{ mediaLink }}" || "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"; // MP4 test
-const subtitleLink = "{{ subtitleLink }}" || "https::/example.com/subtitles.vtt"; // Subtitle file
-
-// --- ELEMENT REFERENCES ---
+const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+const subtitleLink = "{{ subtitleLink }}" || "https://example.com/subtitles.vtt"; // <-- Change this to your subtitle .vtt file
 const video = document.getElementById('stream-media');
 const downloadBtn = document.getElementById('download-btn');
 const toggleBtn = document.getElementById('toggle-subs');
 const track = document.getElementById('subtitle-track');
-const loader = document.getElementById('video-loader');
 
-// Global HLS.js instance
-let hls = null;
-
-// --- INITIALIZE SOURCES ---
+// Set sources
+video.src = mediaLink;
 if (subtitleLink) track.src = subtitleLink;
 downloadBtn.href = mediaLink;
 downloadBtn.setAttribute("download", "");
 
-// --- LOADING SPINNER CONTROL ---
-video.addEventListener('waiting', () => {
-  loader.style.display = 'block'; // Show spinner on buffer/wait
-});
-video.addEventListener('canplay', () => {
-  loader.style.display = 'none'; // Hide spinner when ready to play
-});
-video.addEventListener('loadstart', () => {
-  loader.style.display = 'block'; // Show spinner when loading new src
-});
-video.addEventListener('playing', () => {
-  loader.style.display = 'none'; // Hide spinner when playback starts
-});
-
-// --- PERMANENT WATCH HISTORY (LocalStorage) ---
+// --- Permanent watch history using localStorage ---
 const storageKey = "video_time_" + encodeURIComponent(mediaLink);
+
+// Resume playback
 video.addEventListener('loadedmetadata', () => {
-  loader.style.display = 'none'; // Hide loader
   const savedTime = parseFloat(localStorage.getItem(storageKey));
   if (savedTime && !isNaN(savedTime) && savedTime < video.duration - 3) {
     video.currentTime = savedTime;
   }
 });
+
+// Save progress every 5s
 setInterval(() => {
   if (!video.paused && video.currentTime > 0) {
     localStorage.setItem(storageKey, video.currentTime);
   }
 }, 5000);
+
+// Save when leaving page
 window.addEventListener('beforeunload', () => {
   localStorage.setItem(storageKey, video.currentTime);
 });
 
-// --- SUBTITLE TOGGLE ---
+// --- Subtitles toggle ---
 toggleBtn.addEventListener('click', () => {
   if (track.mode === 'showing') {
     track.mode = 'hidden';
@@ -262,129 +190,27 @@ toggleBtn.addEventListener('click', () => {
     toggleBtn.textContent = "Subtitles: ON";
   }
 });
-// Set default subtitle state
-if (video.textTracks && video.textTracks[0]) {
-    video.textTracks[0].mode = 'showing';
-}
 
-// --- QUALITY SWITCHING LOGIC ---
-/**
- * Main function to change the video source.
- * Handles both HLS and MP4 switching.
- * @param {string} newSrc - The URL of the new video source.
- */
-function changeVideoQuality(newSrc) {
-  if (!newSrc || (video.src === newSrc && !hls)) return;
+// Default subtitles ON
+video.textTracks[0].mode = 'showing';
 
-  // Clean up old HLS instance if it exists
-  if (hls) {
-    hls.destroy();
-    hls = null;
-  }
-
-  const currentTime = video.currentTime;
-  const isPlaying = !video.paused;
-  video.pause();
-  loader.style.display = 'block'; // Show loader
-
-  if (newSrc.endsWith('.m3u8')) {
-    // Load HLS stream
-    loadHlsStream(newSrc, currentTime, isPlaying);
-  } else {
-    // Load MP4 stream
-    video.src = newSrc;
-    video.addEventListener('loadedmetadata', () => {
-      video.currentTime = currentTime;
-      if (isPlaying) {
-        video.play();
-      }
-    }, { once: true });
-    video.load(); // Tell the video element to load the new src
-  }
-}
-
-// Attach listeners to all quality buttons
-document.querySelectorAll('.quality-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const newQualitySrc = btn.dataset.qualitySrc;
-    changeVideoQuality(newQualitySrc);
-    // Update active button
-    document.querySelector('.quality-btn.active').classList.remove('active');
-    btn.classList.add('active');
-  });
-});
-
-// --- HLS.js LOADER FUNCTION ---
-/**
- * Loads an HLS stream, either natively or with HLS.js.
- * @param {string} url - The .m3u8 URL.
- * @param {number} startTime - Time to seek to.
- * @param {boolean} shouldPlay - Whether to play after loading.
- */
-function loadHlsStream(url, startTime = 0, shouldPlay = false) {
-  // Check for native HLS support (Safari)
-  if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = url;
-    video.addEventListener('loadedmetadata', () => {
-        video.currentTime = startTime;
-        if (shouldPlay) video.play();
-    }, { once: true });
-  } else {
-    // Check if HLS.js is already on the page
-    if (typeof Hls === 'undefined') {
-      // Load HLS.js script
-      const script = document.createElement('script');
-      script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
-      script.onload = () => {
-        // Now that Hls is defined, run the setup
-        setupHls(url, startTime, shouldPlay);
-      };
-      document.body.appendChild(script);
-    } else {
-      // Hls is already loaded, just set it up
-      setupHls(url, startTime, shouldPlay);
+// --- HLS support ---
+if (mediaLink.endsWith('.m3u8') && video.canPlayType('application/vnd.apple.mpegurl')) {
+  video.src = mediaLink;
+} else if (mediaLink.endsWith('.m3u8')) {
+  const script = document.createElement('script');
+  script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
+  script.onload = () => {
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(mediaLink);
+      hls.attachMedia(video);
     }
-  }
+  };
+  document.body.appendChild(script);
 }
-
-/**
- * Helper function to configure and attach HLS.js.
- */
-function setupHls(url, startTime, shouldPlay) {
-  if (Hls.isSupported()) {
-    const hlsConfig = {
-      startLevel: 0, // Start at lowest quality for fastest start
-      capLevelToPlayerSize: true, // Don't load 1080p for a small player
-      maxBufferLength: 30,
-    };
-    hls = new Hls(hlsConfig);
-    hls.loadSource(url);
-    hls.attachMedia(video);
-    
-    hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-        // HLS is ready
-        video.currentTime = startTime;
-        if (shouldPlay) video.play();
-    });
-
-    hls.on(Hls.Events.ERROR, (event, data) => {
-      if (data.fatal) {
-        console.error("HLS fatal error:", data);
-        // You could try to recover here
-      }
-    });
-  } else {
-    // HLS.js not supported (very rare)
-    console.error("HLS.js is not supported in this browser.");
-  }
-}
-
-// --- INITIAL VIDEO LOAD ---
-// This function now acts as a router
-// It will load the default `mediaLink` using the correct player
-changeVideoQuality(mediaLink);
-
 </script>
 
 </body>
 </html>
+
