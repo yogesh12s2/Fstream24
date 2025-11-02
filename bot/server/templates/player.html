@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -22,7 +22,6 @@ body {
   background: black;
   outline: none;
 }
-
 .watermark {
   position: absolute;
   top: 12px;
@@ -32,8 +31,6 @@ body {
   pointer-events: none;
   z-index: 10;
 }
-
-/* Bottom Section & Suggestions Grid */
 .bottom-section {
   padding: 20px;
 }
@@ -82,13 +79,13 @@ body {
   text-align: center;
   color: #ccc;
 }
-
 @media(max-width:768px){
   .movie-title { font-size: 12px; }
   .download-btn { font-size: 14px; padding: 10px 16px; }
 }
 </style>
 </head>
+
 <body>
 
 <div class="player-container">
@@ -125,18 +122,38 @@ const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36
 const video = document.getElementById('stream-media');
 const downloadBtn = document.getElementById('download-btn');
 
-// set video src
+// Set video source
 video.src = mediaLink;
-
-// enable download
 downloadBtn.href = mediaLink;
 downloadBtn.setAttribute("download", "");
 
-// handle HLS (.m3u8) fallback for browsers that support it
+// --- Use localStorage for permanent storage ---
+const storageKey = "video_time_" + encodeURIComponent(mediaLink);
+
+// --- Resume playback from stored time ---
+video.addEventListener('loadedmetadata', () => {
+  const savedTime = parseFloat(localStorage.getItem(storageKey));
+  if (savedTime && !isNaN(savedTime) && savedTime < video.duration - 3) {
+    video.currentTime = savedTime;
+  }
+});
+
+// --- Save progress every 5 seconds ---
+setInterval(() => {
+  if (!video.paused && video.currentTime > 0) {
+    localStorage.setItem(storageKey, video.currentTime);
+  }
+}, 5000);
+
+// --- Save when leaving the page ---
+window.addEventListener('beforeunload', () => {
+  localStorage.setItem(storageKey, video.currentTime);
+});
+
+// --- HLS.js fallback for .m3u8 ---
 if (mediaLink.endsWith('.m3u8') && video.canPlayType('application/vnd.apple.mpegurl')) {
   video.src = mediaLink;
 } else if (mediaLink.endsWith('.m3u8')) {
-  // if not supported, use Hls.js dynamically
   const script = document.createElement('script');
   script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
   script.onload = () => {
