@@ -31,6 +31,24 @@ body {
   pointer-events: none;
   z-index: 10;
 }
+.subtitle-btn {
+  position: absolute;
+  bottom: 15px;
+  right: 20px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 11;
+  transition: 0.3s;
+}
+.subtitle-btn:hover {
+  background: #ff0000;
+  border-color: #ff0000;
+}
 .bottom-section {
   padding: 20px;
 }
@@ -91,9 +109,15 @@ body {
 <div class="player-container">
   <video id="stream-media" controls preload="auto" poster="https://chadstreamz.sbs/assets/images/log2.png">
     <source src="{{ mediaLink }}" type="video/mp4">
+    <!-- Subtitle example -->
+    <track id="subtitle-track" label="English" kind="subtitles" srclang="en" src="{{ subtitleLink }}" default>
     Your browser does not support the video tag.
   </video>
+
   <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
+
+  <!-- Subtitle toggle button -->
+  <button id="toggle-subs" class="subtitle-btn">Subtitles: ON</button>
 </div>
 
 <div class="bottom-section">
@@ -119,18 +143,22 @@ body {
 
 <script>
 const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+const subtitleLink = "{{ subtitleLink }}" || "https://example.com/subtitles.vtt"; // <-- Change this to your subtitle .vtt file
 const video = document.getElementById('stream-media');
 const downloadBtn = document.getElementById('download-btn');
+const toggleBtn = document.getElementById('toggle-subs');
+const track = document.getElementById('subtitle-track');
 
-// Set video source
+// Set sources
 video.src = mediaLink;
+if (subtitleLink) track.src = subtitleLink;
 downloadBtn.href = mediaLink;
 downloadBtn.setAttribute("download", "");
 
-// --- Use localStorage for permanent storage ---
+// --- Permanent watch history using localStorage ---
 const storageKey = "video_time_" + encodeURIComponent(mediaLink);
 
-// --- Resume playback from stored time ---
+// Resume playback
 video.addEventListener('loadedmetadata', () => {
   const savedTime = parseFloat(localStorage.getItem(storageKey));
   if (savedTime && !isNaN(savedTime) && savedTime < video.duration - 3) {
@@ -138,19 +166,33 @@ video.addEventListener('loadedmetadata', () => {
   }
 });
 
-// --- Save progress every 5 seconds ---
+// Save progress every 5s
 setInterval(() => {
   if (!video.paused && video.currentTime > 0) {
     localStorage.setItem(storageKey, video.currentTime);
   }
 }, 5000);
 
-// --- Save when leaving the page ---
+// Save when leaving page
 window.addEventListener('beforeunload', () => {
   localStorage.setItem(storageKey, video.currentTime);
 });
 
-// --- HLS.js fallback for .m3u8 ---
+// --- Subtitles toggle ---
+toggleBtn.addEventListener('click', () => {
+  if (track.mode === 'showing') {
+    track.mode = 'hidden';
+    toggleBtn.textContent = "Subtitles: OFF";
+  } else {
+    track.mode = 'showing';
+    toggleBtn.textContent = "Subtitles: ON";
+  }
+});
+
+// Default subtitles ON
+video.textTracks[0].mode = 'showing';
+
+// --- HLS support ---
 if (mediaLink.endsWith('.m3u8') && video.canPlayType('application/vnd.apple.mpegurl')) {
   video.src = mediaLink;
 } else if (mediaLink.endsWith('.m3u8')) {
