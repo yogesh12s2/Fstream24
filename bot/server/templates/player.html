@@ -31,26 +31,6 @@ body {
   pointer-events: none;
   z-index: 10;
 }
-.subtitle-btn {
-  margin-top:10px;
-  position: absolute;
-  display:none;
-  bottom: 15px;
-  right: 20px;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  border: 1px solid #fff;
-  border-radius: 4px;
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 14px;
-  z-index: 11;
-  transition: 0.3s;
-}
-.subtitle-btn:hover {
-  background: #ff0000;
-  border-color: #ff0000;
-}
 .bottom-section {
   padding: 20px;
 }
@@ -111,15 +91,10 @@ body {
 <div class="player-container">
   <video id="stream-media" controls preload="auto" poster="https://chadstreamz.sbs/assets/images/log2.png" autoplay>
     <source src="{{ mediaLink }}" type="video/mp4">
-    <!-- Subtitle example -->
-    <track id="subtitle-track" label="English" kind="subtitles" srclang="en" src="{{ mediaLink }}" default>
     Your browser does not support the video tag.
   </video>
 
   <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
-
-  <!-- Subtitle toggle button -->
-  <button id="toggle-subs" class="subtitle-btn">Subtitles: ON</button>
 </div>
 
 <div class="bottom-section">
@@ -145,15 +120,11 @@ body {
 
 <script>
 const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
-const subtitleLink = "{{ subtitleLink }}" || "https://example.com/subtitles.vtt"; // <-- Change this to your subtitle .vtt file
 const video = document.getElementById('stream-media');
 const downloadBtn = document.getElementById('download-btn');
-const toggleBtn = document.getElementById('toggle-subs');
-const track = document.getElementById('subtitle-track');
 
 // Set sources
 video.src = mediaLink;
-if (subtitleLink) track.src = subtitleLink;
 downloadBtn.href = mediaLink;
 downloadBtn.setAttribute("download", "");
 
@@ -180,20 +151,6 @@ window.addEventListener('beforeunload', () => {
   localStorage.setItem(storageKey, video.currentTime);
 });
 
-// --- Subtitles toggle ---
-toggleBtn.addEventListener('click', () => {
-  if (track.mode === 'showing') {
-    track.mode = 'hidden';
-    toggleBtn.textContent = "Subtitles: OFF";
-  } else {
-    track.mode = 'showing';
-    toggleBtn.textContent = "Subtitles: ON";
-  }
-});
-
-// Default subtitles ON
-video.textTracks[0].mode = 'showing';
-
 // --- HLS support ---
 if (mediaLink.endsWith('.m3u8') && video.canPlayType('application/vnd.apple.mpegurl')) {
   video.src = mediaLink;
@@ -213,5 +170,3 @@ if (mediaLink.endsWith('.m3u8') && video.canPlayType('application/vnd.apple.mpeg
 
 </body>
 </html>
-
-
