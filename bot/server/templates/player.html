@@ -119,19 +119,19 @@ body {
 </div>
 
 <script>
-const mediaLink = "{{ mediaLink }}" || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+const mediaLink = "{{ mediaLink }}" || "https://example.com/video.mp4";
 const video = document.getElementById('stream-media');
 const downloadBtn = document.getElementById('download-btn');
 
-// Set sources
+// Set video source
 video.src = mediaLink;
 downloadBtn.href = mediaLink;
 downloadBtn.setAttribute("download", "");
 
-// --- Permanent watch history using localStorage ---
+// --- Watch history using localStorage ---
 const storageKey = "video_time_" + encodeURIComponent(mediaLink);
 
-// Resume playback
+// Resume playback from last position
 video.addEventListener('loadedmetadata', () => {
   const savedTime = parseFloat(localStorage.getItem(storageKey));
   if (savedTime && !isNaN(savedTime) && savedTime < video.duration - 3) {
@@ -139,33 +139,17 @@ video.addEventListener('loadedmetadata', () => {
   }
 });
 
-// Save progress every 5s
+// Save playback position every 5 seconds
 setInterval(() => {
   if (!video.paused && video.currentTime > 0) {
     localStorage.setItem(storageKey, video.currentTime);
   }
 }, 5000);
 
-// Save when leaving page
+// Save time when leaving page
 window.addEventListener('beforeunload', () => {
   localStorage.setItem(storageKey, video.currentTime);
 });
-
-// --- HLS support ---
-if (mediaLink.endsWith('.m3u8') && video.canPlayType('application/vnd.apple.mpegurl')) {
-  video.src = mediaLink;
-} else if (mediaLink.endsWith('.m3u8')) {
-  const script = document.createElement('script');
-  script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
-  script.onload = () => {
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(mediaLink);
-      hls.attachMedia(video);
-    }
-  };
-  document.body.appendChild(script);
-}
 </script>
 
 </body>
