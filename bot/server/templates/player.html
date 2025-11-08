@@ -1,209 +1,137 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChadStreamz Player</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-:root {
-  --primary: #e50914;
-  --accent: #ff4b2b;
-  --bg: #0f0f0f;
-  --text: #f5f5f5;
-  --muted: #999;
-  --radius: 12px;
-}
-
-* { box-sizing: border-box; }
 body {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(180deg, #000 0%, #111 100%);
-  color: var(--text);
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
 }
-
-/* Player Section */
 .player-container {
   position: relative;
   width: 100%;
-  background: #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  height: 65vh;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.8);
+  background: black;
 }
 #stream-media {
   width: 100%;
-  height: 100%;
-  background: #000;
-  border: none;
+  height: 50vh;
+  background: black;
   outline: none;
-  object-fit: cover;
-  border-radius: 0;
 }
 .watermark {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 100px;
-  opacity: 0.6;
+  top: 12px;
+  right: 12px;
+  width: 80px;
+  opacity: 0.7;
   pointer-events: none;
   z-index: 10;
 }
-
-/* Bottom Section */
 .bottom-section {
-  padding: 40px 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 20px;
 }
-
-/* Download Button */
 .download-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  padding: 14px 26px;
-  border-radius: var(--radius);
+  display: inline-block;
+  padding: 12px 20px;
+  background: #ff0000;
   color: #fff;
-  font-size: 16px;
-  font-weight: 600;
   text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.3);
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: 0.3s;
 }
 .download-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(229, 9, 20, 0.5);
+  background: #cc0000;
 }
-
-/* Suggestions Section */
 .suggestions {
-  margin-top: 50px;
+  margin-top: 30px;
 }
 .suggestions h2 {
-  font-size: 24px;
-  margin-bottom: 25px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  border-left: 5px solid var(--primary);
-  padding-left: 10px;
+  font-size: 22px;
+  margin-bottom: 20px;
 }
-
 .movies-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 18px;
 }
 .movie-card {
-  position: relative;
   cursor: pointer;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: #1b1b1b;
-  transition: all 0.3s ease;
+  transition: transform 0.3s;
 }
 .movie-card:hover {
-  transform: scale(1.06);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  transform: scale(1.05);
 }
 .movie-card img {
   width: 100%;
-  height: 250px;
-  object-fit: cover;
-  border-radius: var(--radius);
+  border-radius: 8px;
   display: block;
-  transition: 0.4s ease;
-}
-.movie-card:hover img {
-  filter: brightness(0.85);
-}
-.movie-info {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.85));
-  color: #fff;
-  padding: 10px 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
 }
 .movie-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin: 0;
+  margin-top: 8px;
+  font-size: 14px;
+  text-align: center;
+  color: #ccc;
 }
-.movie-subtitle {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-@media (max-width: 768px) {
-  .bottom-section { padding: 25px 16px; }
-  .movies-grid { gap: 14px; }
-  .movie-card img { height: 200px; }
-  .download-btn { padding: 12px 18px; font-size: 14px; }
+@media(max-width:768px){
+  .movie-title { font-size: 12px; }
+  .download-btn { font-size: 14px; padding: 10px 16px; }
 }
 </style>
 </head>
 
 <body>
 
-<!-- Player -->
 <div class="player-container">
   <video id="stream-media" controls preload="auto" poster="https://chadstreamz.sbs/assets/images/log2.png" autoplay>
     <source src="{{ mediaLink }}" type="video/mp4">
     Your browser does not support the video tag.
   </video>
+
   <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Watermark">
 </div>
 
-<!-- Content -->
 <div class="bottom-section">
-  <a id="download-btn" class="download-btn">⬇ Download Video</a>
-
+  <a id="download-btn" class="download-btn">⬇ Download</a>
   <div class="suggestions">
     <h2>More Like This</h2>
     <div class="movies-grid">
       <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
         <img src="https://image.tmdb.org/t/p/w500/weVXMD5QBGeQil4HEATZqAkXeEc.jpg" alt="Terminator">
-        <div class="movie-info">
-          <p class="movie-title">Terminator</p>
-          <p class="movie-subtitle">Action • Sci-Fi</p>
-        </div>
+        <div class="movie-title">Terminator</div>
       </div>
       <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
         <img src="https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" alt="Spiderman No Way Home">
-        <div class="movie-info">
-          <p class="movie-title">Spiderman No Way Home</p>
-          <p class="movie-subtitle">Adventure • Fantasy</p>
-        </div>
+        <div class="movie-title">Spiderman No Way Home</div>
       </div>
       <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
         <img src="https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg" alt="A Quiet Place">
-        <div class="movie-info">
-          <p class="movie-title">A Quiet Place</p>
-          <p class="movie-subtitle">Thriller • Horror</p>
-        </div>
+        <div class="movie-title">A Quiet Place</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Script -->
 <script>
 const mediaLink = "{{ mediaLink }}" || "https://example.com/video.mp4";
 const video = document.getElementById('stream-media');
 const downloadBtn = document.getElementById('download-btn');
 
+// Set video source
 video.src = mediaLink;
 downloadBtn.href = mediaLink;
 downloadBtn.setAttribute("download", "");
 
-// Resume playback
+// --- Watch history using localStorage ---
 const storageKey = "video_time_" + encodeURIComponent(mediaLink);
+
+// Resume playback from last position
 video.addEventListener('loadedmetadata', () => {
   const savedTime = parseFloat(localStorage.getItem(storageKey));
   if (savedTime && !isNaN(savedTime) && savedTime < video.duration - 3) {
@@ -211,14 +139,14 @@ video.addEventListener('loadedmetadata', () => {
   }
 });
 
-// Save every 5 seconds
+// Save playback position every 5 seconds
 setInterval(() => {
   if (!video.paused && video.currentTime > 0) {
     localStorage.setItem(storageKey, video.currentTime);
   }
 }, 5000);
 
-// Save before unload
+// Save time when leaving page
 window.addEventListener('beforeunload', () => {
   localStorage.setItem(storageKey, video.currentTime);
 });
