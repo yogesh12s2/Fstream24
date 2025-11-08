@@ -1,6 +1,7 @@
 from quart import Blueprint, Response, request, render_template, redirect
 from math import ceil
 from re import match as re_match
+import asyncio
 import time
 from .error import abort
 from bot import TelegramBot
@@ -26,7 +27,9 @@ async def transmit_file(file_id):
 
     start = 0
     end = file_size - 1
-    base_chunk_size = 1 * 1024 * 1024  # start with 1MB
+    base_chunk_size = 1 * 1024 * 1024  # Start with 1MB
+    min_chunk = 256 * 1024
+    max_chunk = 8 * 1024 * 1024
 
     if range_header:
         range_match = re_match(r'bytes=(\d+)-(\d*)', range_header)
@@ -38,11 +41,9 @@ async def transmit_file(file_id):
         else:
             abort(400, 'Invalid Range header')
 
-    offset_chunks = start // base_chunk_size
     total_bytes_to_stream = end - start + 1
-    chunks_to_stream = ceil(total_bytes_to_stream / base_chunk_size)
-
     content_length = total_bytes_to_stream
+
     headers = {
         'Content-Type': mime_type,
         'Content-Disposition': f'inline; filename={file_name}',
@@ -50,46 +51,54 @@ async def transmit_file(file_id):
         'Accept-Ranges': 'bytes',
         'Content-Length': str(content_length),
         'Cache-Control': 'no-store',
+        'X-Accel-Buffering': 'no',  # Disable proxy buffering
     }
     status_code = 206 if range_header else 200
 
-    async def adaptive_stream():
+    async def smooth_stream():
+        """Smart adaptive streaming with predictive buffering."""
         nonlocal base_chunk_size
-        bytes_streamed = 0
-        chunk_index = 0
+        bytes_sent = 0
         last_speed = None
+        smoothing_factor = 0.85  # higher = smoother response, slower adaptation
+        target_buffer_time = 0.25  # seconds of "rest" between chunks
 
-        async for chunk in TelegramBot.stream_media(file, offset=offset_chunks, limit=chunks_to_stream):
-            # Measure transfer speed
+        async for chunk in TelegramBot.stream_media(file, offset=(start // base_chunk_size), limit=ceil(content_length / base_chunk_size)):
             t1 = time.perf_counter()
-            
-            if chunk_index == 0:  # Trim first chunk
+
+            # Trim first chunk if needed
+            if bytes_sent == 0:
                 trim_start = start % base_chunk_size
                 if trim_start > 0:
                     chunk = chunk[trim_start:]
 
+            # Send chunk
             yield chunk
-            bytes_streamed += len(chunk)
-            chunk_index += 1
+            bytes_sent += len(chunk)
 
-            # Measure speed after yielding
+            # Measure speed
             t2 = time.perf_counter()
             duration = max(t2 - t1, 0.001)
-            speed = len(chunk) / duration  # bytes per second
+            speed = len(chunk) / duration  # bytes/sec
 
-            # Smooth network speed adaptation
+            # Smooth average
             if last_speed:
-                speed = (last_speed * 0.7) + (speed * 0.3)
+                speed = last_speed * smoothing_factor + speed * (1 - smoothing_factor)
             last_speed = speed
 
-            # Adjust chunk size adaptively
-            if speed < 300_000:  # < 300 KB/s → slow connection
-                base_chunk_size = max(256 * 1024, base_chunk_size // 2)
-            elif speed > 1_000_000:  # > 1 MB/s → good connection
-                base_chunk_size = min(4 * 1024 * 1024, base_chunk_size * 2)
+            # Adaptive chunk size control (smooth step)
+            target_speed = 800_000  # ideal: 800 KB/s (adjust to your server)
+            ratio = min(max(speed / target_speed, 0.5), 2.0)
+            base_chunk_size = int(base_chunk_size * ratio)
+            base_chunk_size = max(min_chunk, min(max_chunk, base_chunk_size))
 
-    return Response(adaptive_stream(), headers=headers, status=status_code)
+            # Small adaptive delay to pace stream smoothly (prevents burst stalls)
+            await asyncio.sleep(target_buffer_time / ratio)
 
+            if bytes_sent >= content_length:
+                break
+
+    return Response(smooth_stream(), headers=headers, status=status_code)
 
 @bp.route('/stream/<int:file_id>')
 async def stream_file(file_id):
