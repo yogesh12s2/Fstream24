@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>ChadStreamz Player</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/x-icon" href="https://chadstreamz.sbs/favicon.svg"/>
+
 <style>
 body {
   margin: 0;
@@ -98,23 +100,11 @@ body {
 </div>
 
 <div class="bottom-section">
-  <a id="download-btn" class="download-btn">⬇ Download</a>
+  <a id="download-btn" class="download-btn">â¬‡ Download</a>
+
   <div class="suggestions">
     <h2>More Like This</h2>
-    <div class="movies-grid">
-      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-        <img src="https://image.tmdb.org/t/p/w500/weVXMD5QBGeQil4HEATZqAkXeEc.jpg" alt="Terminator">
-        <div class="movie-title">Terminator</div>
-      </div>
-      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-        <img src="https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" alt="Spiderman No Way Home">
-        <div class="movie-title">Spiderman No Way Home</div>
-      </div>
-      <div class="movie-card" onclick="window.location.href='https://chadstreamz.sbs'">
-        <img src="https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg" alt="A Quiet Place">
-        <div class="movie-title">A Quiet Place</div>
-      </div>
-    </div>
+    <div class="movies-grid" id="suggestion-container"></div>
   </div>
 </div>
 
@@ -131,7 +121,7 @@ downloadBtn.setAttribute("download", "");
 // --- Watch history using localStorage ---
 const storageKey = "video_time_" + encodeURIComponent(mediaLink);
 
-// Resume playback from last position
+// Resume playback
 video.addEventListener('loadedmetadata', () => {
   const savedTime = parseFloat(localStorage.getItem(storageKey));
   if (savedTime && !isNaN(savedTime) && savedTime < video.duration - 3) {
@@ -139,17 +129,58 @@ video.addEventListener('loadedmetadata', () => {
   }
 });
 
-// Save playback position every 5 seconds
+// Save every 5 seconds
 setInterval(() => {
   if (!video.paused && video.currentTime > 0) {
     localStorage.setItem(storageKey, video.currentTime);
   }
 }, 5000);
 
-// Save time when leaving page
 window.addEventListener('beforeunload', () => {
   localStorage.setItem(storageKey, video.currentTime);
 });
+
+
+// ============================================
+// ðŸ”¥ LOAD MOVIES FROM PHP API
+// ============================================
+const API_URL = "https://chadstreamz.sbs/api/random_movies.php";
+
+async function loadSuggestions() {
+  try {
+    const response = await fetch(API_URL);
+    const movies = await response.json();
+
+    const container = document.getElementById('suggestion-container');
+    container.innerHTML = "";
+
+    movies.forEach(m => {
+      const card = document.createElement("div");
+      card.classList.add("movie-card");
+
+      // Clicking loads movie download link
+      card.onclick = () => {
+        if (m.download) {
+          window.location.href = m.download;
+        }
+      };
+
+      card.innerHTML = `
+        <img src="${m.image_url}" alt="${m.title}">
+        <div class="movie-title">${m.title}</div>
+      `;
+
+      container.appendChild(card);
+    });
+
+  } catch (error) {
+    console.log("Suggestion Load Error:", error);
+  }
+}
+
+
+
+loadSuggestions();
 </script>
 
 </body>
