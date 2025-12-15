@@ -2,457 +2,374 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ChadStreamz Futuristic Player</title>
+<title>ChadStreamz Player</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="icon" type="image/x-icon" href="https://chadstreamz.sbs/favicon.svg"/>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mediaelement/4.2.16/mediaelementplayer.min.css">
-
 <style>
-/* --- 1. Global Cinematic Theme --- */
-:root {
-    --neon-red: #ff0a16; 
-    --glass-bg: rgba(20, 20, 20, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --bg-black: #0a0a0a;
-    --text-white: #ffffff;
-}
+    /* --- VARIABLES --- */
+    :root { --brand-red: #e50914; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
+    body { margin: 0; background-color: #000; color: #fff; font-family: sans-serif; }
 
-body {
-    margin: 0;
-    background-color: var(--bg-black);
-    color: var(--text-white);
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    overflow-x: hidden; 
-    -webkit-tap-highlight-color: transparent;
-}
+    /* --- VIDEO CONTAINER --- */
+    .video-container {
+        position: relative; width: 100%; aspect-ratio: 16/9;
+        background: #000; overflow: hidden;
+    }
+    video {
+        width: 100%; height: 100%; display: block;
+        object-fit: contain; transition: object-fit 0.4s ease;
+    }
+    video.fill-mode { object-fit: cover; }
 
-/* --- 2. Player Container --- */
-.cinema-container {
-    position: relative;
-    width: 100%;
-    background: #000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    aspect-ratio: 16/9;
-    overflow: hidden; 
-    box-shadow: 0 0 50px rgba(0,0,0,0.5);
-}
+    /* FORCE LANDSCAPE HACK */
+    .video-container.force-landscape {
+        position: fixed; top: 0; left: 0; width: 100vh !important; height: 100vw !important;
+        z-index: 9999; transform-origin: top left;
+        transform: rotate(90deg) translateY(-100%);
+    }
 
-/* Force Landscape Hack */
-.video-force-rotate {
-    position: fixed !important;
-    top: 0 !important; left: 0 !important;
-    width: 100vh !important; height: 100vw !important;
-    transform: rotate(90deg);
-    transform-origin: top left;
-    margin-left: 100vw; 
-    z-index: 99999;
-    background: black;
-}
-
-video {
-    width: 100%; height: 100%;
-    object-fit: contain; 
-    transition: object-fit 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Fit to Screen Mode */
-.force-cover video, 
-.force-cover .mejs__video, 
-.force-cover .mejs__poster,
-.force-cover .mejs__container {
-    object-fit: cover !important;
-    width: 100% !important; height: 100% !important;
-}
-
-/* Watermark */
-.watermark {
-    position: absolute; top: 20px; right: 20px;
-    width: 70px; opacity: 0.6; z-index: 20; pointer-events: none;
-    filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
-}
-
-/* --- 3. FUTURISTIC CONTROLS (Floating Glass) --- */
-.mejs__controls {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
+    /* --- LAYERS --- */
+    /* Z-Index Strategy:
+       10: Video
+       20: Watermark
+       30: Tap Feedback
+       40: Bottom Controls (Container)
+       50: Loaders
+       60: Center Buttons (Must be highest to be clickable)
+    */
     
-    /* Floating Bar Style */
-    position: absolute !important;
-    bottom: 15px !important;
-    left: 2.5% !important;
-    width: 95% !important;
-    height: 55px !important;
-    border-radius: 16px !important;
-    padding: 0 10px !important;
+    .watermark { position: absolute; top: 20px; right: 20px; width: 60px; opacity: 0.7; z-index: 20; pointer-events: none; }
+
+    /* LOADERS */
+    .loader-overlay {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        display: flex; justify-content: center; align-items: center;
+        z-index: 50; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+    }
+    .loader-overlay.active { opacity: 1; }
+    #initialLoader { background: #000; z-index: 70; }
+    #bufferLoader { background: rgba(0,0,0,0.3); }
+
+    .spinner {
+        width: 50px; height: 50px; border-radius: 50%;
+        border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--brand-red);
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* --- CENTER CONTROLS (Top Layer) --- */
+    .center-wrapper {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        /* FIX: High Z-index ensures it sits ABOVE the bottom controls gradient */
+        z-index: 60; 
+        display: flex; align-items: center; justify-content: center; gap: 40px;
+        pointer-events: none; /* Container passes clicks */
+        opacity: 0; transition: opacity 0.2s;
+    }
+    .center-wrapper.visible { opacity: 1; }
+
+    /* Buttons are clickable */
+    .center-main-btn {
+        width: 70px; height: 70px;
+        display: flex; justify-content: center; align-items: center;
+        cursor: pointer; border-radius: 50%;
+        background: rgba(0,0,0,0.4); 
+        transition: transform 0.2s, background 0.2s;
+        backdrop-filter: blur(2px);
+        pointer-events: auto; /* FIX: Explicitly auto */
+    }
+    .center-main-btn:active { transform: scale(0.9); background: rgba(0,0,0,0.6); }
+    .center-main-btn svg { width: 36px; height: 36px; fill: #fff; }
+
+    .seek-btn {
+        width: 50px; height: 50px;
+        display: flex; justify-content: center; align-items: center;
+        cursor: pointer; border-radius: 50%;
+        background: rgba(0,0,0,0.3);
+        transition: transform 0.2s;
+        pointer-events: auto; /* FIX: Explicitly auto */
+    }
+    .seek-btn:active { transform: scale(0.9); background: rgba(0,0,0,0.5); }
+    .seek-btn svg { width: 26px; height: 26px; fill: #fff; }
+
+    /* --- BOTTOM CONTROLS --- */
+    .controls {
+        position: absolute; bottom: 0; left: 0; width: 100%;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        padding: 40px 20px 15px 20px;
+        display: flex; flex-direction: column; gap: 8px; z-index: 40;
+        opacity: 0; transform: translateY(10px);
+        transition: opacity 0.3s, transform 0.3s;
+        
+        /* FIX: Ensure the transparent gradient doesn't block clicks on video center */
+        pointer-events: none; 
+    }
+    .controls.visible { opacity: 1; transform: translateY(0); }
     
-    /* Glassmorphism */
-    background: var(--glass-bg) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    
-    opacity: 1;
-    transition: opacity 0.4s ease, transform 0.4s ease;
-    visibility: visible;
-}
+    /* Re-enable clicks for actual buttons/slider */
+    .progress-box, .btn-row { pointer-events: auto; }
 
-/* Hide controls animation */
-.controls-hidden .mejs__controls {
-    opacity: 0 !important;
-    transform: translateY(20px); /* Slide down effect */
-    visibility: hidden;
-    pointer-events: none;
-}
+    /* Progress Bar */
+    .progress-box { width: 100%; position: relative; height: 20px; display: flex; align-items: center; cursor: pointer; }
+    input[type=range] {
+        width: 100%; -webkit-appearance: none; background: transparent; height: 4px; 
+        border-radius: 2px; background: rgba(255,255,255,0.3);
+    }
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none; height: 14px; width: 14px;
+        background: var(--brand-red); border-radius: 50%;
+        margin-top: -5px; box-shadow: 0 0 10px var(--brand-red);
+    }
 
-/* Flexible Progress Bar (Prevents Overlap) */
-.mejs__time-rail {
-    flex: 1 1 auto !important; /* Grow and shrink */
-    margin: 0 15px !important;
-    padding-top: 12px !important;
-    min-width: 50px !important; /* Allows shrinking on small screens */
-}
+    .btn-row { display: flex; justify-content: space-between; align-items: center; }
+    .grp { display: flex; align-items: center; gap: 20px; }
+    button { background: none; border: none; color: #eee; cursor: pointer; padding: 0; }
+    button:hover { color: #fff; transform: scale(1.1); }
+    button svg { width: 28px; height: 28px; fill: currentColor; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
+    .time-txt { font-size: 13px; color: #ddd; font-weight: 500; }
+    .fit-btn.active { color: var(--brand-red); }
 
-/* Neon Glow Progress Line */
-.mejs__time-total { 
-    background: rgba(255,255,255,0.2) !important; 
-    border-radius: 10px;
-    height: 6px !important;
-}
-.mejs__time-current { 
-    background: var(--neon-red) !important; 
-    border-radius: 10px;
-    box-shadow: 0 0 10px var(--neon-red), 0 0 20px var(--neon-red); /* Glowing effect */
-    height: 6px !important;
-}
-.mejs__time-handle { border-radius: 50%; border: none !important; background: white !important; box-shadow: 0 0 10px white; top: -3px !important; }
+    /* --- TAP FEEDBACK --- */
+    .tap-feedback {
+        position: absolute; top: 0; bottom: 0; width: 40%;
+        display: flex; justify-content: center; align-items: center;
+        font-weight: bold; font-size: 18px; z-index: 30; pointer-events: none;
+        opacity: 0; transition: opacity 0.2s;
+    }
+    .tap-left { left: 0; background: linear-gradient(to right, rgba(255,255,255,0.1), transparent); }
+    .tap-right { right: 0; background: linear-gradient(to left, rgba(255,255,255,0.1), transparent); }
+    .tap-feedback.animate { animation: ripple 0.5s ease-out forwards; }
+    @keyframes ripple { 0% { opacity: 1; } 100% { opacity: 0; } }
 
-/* Buttons Layout */
-.mejs__button { width: 34px !important; margin: 0 4px !important; }
-.mejs__button button { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+    /* --- PAGE --- */
+    .content { max-width: 1200px; margin: 0 auto; padding: 25px 5%; }
+    .dl-btn { background: #222; color: #fff; padding: 10px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; border: 1px solid #444; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
+    .card { border-radius: 8px; overflow: hidden; cursor: pointer; }
+    .card img { width: 100%; display: block; aspect-ratio: 2/3; object-fit: cover; }
 
-/* Time Display */
-.mejs__time { font-weight: 600; font-size: 13px; letter-spacing: 0.5px; padding-top: 12px !important; }
-
-/* --- 4. CENTER PLAY BUTTON (Modern Pulse) --- */
-.mejs__overlay-play .mejs__overlay-button {
-    background: rgba(229, 9, 20, 0.8) !important; /* Red background */
-    border: none !important;
-    border-radius: 50%;
-    width: 70px; height: 70px;
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7);
-    animation: pulse-red 2s infinite;
-    z-index: 10;
-}
-
-/* The Triangle */
-.mejs__overlay-play .mejs__overlay-button::before {
-    content: ""; position: absolute; top: 50%; left: 55%;
-    transform: translate(-50%, -50%);
-    border-style: solid; border-width: 14px 0 14px 24px;
-    border-color: transparent transparent transparent #fff;
-}
-
-@keyframes pulse-red {
-    0% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7); }
-    70% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 20px rgba(229, 9, 20, 0); }
-    100% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); }
-}
-
-/* --- 5. DOUBLE TAP FEEDBACK --- */
-.tap-feedback {
-    position: absolute; top: 0; bottom: 0; width: 40%;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none; z-index: 60;
-    transition: opacity 0.2s;
-}
-.tap-left { left: 0; background: linear-gradient(to right, rgba(0,0,0,0.4), transparent); }
-.tap-right { right: 0; background: linear-gradient(to left, rgba(0,0,0,0.4), transparent); }
-
-.tap-icon-box {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(5px);
-    border-radius: 50%; width: 50px; height: 50px;
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 8px;
-}
-.tap-feedback.active { opacity: 1; }
-.tap-text { font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
-
-/* --- 6. INFO & DOWNLOAD (Red Button) --- */
-.info-section { padding: 25px 5%; max-width: 1200px; margin: 0 auto; }
-.action-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 25px; margin-bottom: 25px; }
-
-.movie-meta h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
-.movie-meta span { color: #888; font-size: 13px; font-weight: 500; }
-
-.btn-download-red {
-    display: inline-flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, #E50914 0%, #b2070f 100%);
-    color: white; font-size: 14px; font-weight: 700;
-    padding: 12px 24px; border-radius: 8px; text-decoration: none;
-    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
-    transition: all 0.2s ease; border: none;
-}
-.btn-download-red:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(229, 9, 20, 0.6); }
-.btn-download-red:active { transform: scale(0.98); }
-
-.grid-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.card { border-radius: 8px; overflow: hidden; cursor: pointer; background: #1a1a1a; transition: transform 0.3s; }
-.card:hover { transform: translateY(-5px); z-index: 5; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-.card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
-
-/* Custom SVG Icon Color */
-.custom-btn svg { width: 22px; height: 22px; fill: #ddd; transition: fill 0.2s; }
-.custom-btn:hover svg { fill: var(--neon-red); }
-
-@media(max-width: 768px) {
-    .cinema-container { aspect-ratio: auto; height: 40vh; } 
-    .action-row { flex-direction: column; align-items: flex-start; gap: 15px; }
-    .btn-download-red { width: 100%; }
-    .mejs__controls { bottom: 10px !important; width: 94% !important; left: 3% !important; height: 50px !important; }
-}
 </style>
 </head>
-
 <body>
 
-<div class="cinema-container" id="video-wrapper">
+<div class="video-container" id="player">
+    <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Logo">
     
-    <div id="tap-feedback-left" class="tap-feedback tap-left">
-        <div class="tap-icon-box">
-            <svg viewBox="0 0 24 24" fill="white" width="24" height="24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+    <div class="loader-overlay active" id="initialLoader"><div class="spinner"></div></div>
+    <div class="loader-overlay" id="bufferLoader"><div class="spinner"></div></div>
+
+    <div class="center-wrapper visible" id="centerWrapper">
+        <div class="seek-btn" id="rwdBtn">
+            <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
         </div>
-        <div class="tap-text">-5 SEC</div>
-    </div>
-    
-    <div id="tap-feedback-right" class="tap-feedback tap-right">
-        <div class="tap-icon-box">
-            <svg viewBox="0 0 24 24" fill="white" width="24" height="24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+        
+        <div class="center-main-btn" id="centerBtn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </div>
-        <div class="tap-text">+5 SEC</div>
+        
+        <div class="seek-btn" id="fwdBtn">
+            <svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+        </div>
     </div>
 
-    <video id="player1" width="100%" height="100%" controls preload="auto" poster="https://chadstreamz.sbs/assets/images/log2.png" playsinline webkit-playsinline crossorigin="anonymous">
+    <div class="tap-feedback tap-left" id="tapLeft"><span>« 10s</span></div>
+    <div class="tap-feedback tap-right" id="tapRight"><span>10s »</span></div>
+
+    <video id="vid" poster="https://chadstreamz.sbs/assets/images/log2.png" playsinline preload="auto">
         <source src="{{ mediaLink }}" type="video/mp4">
+        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
     </video>
 
-    <img src="https://chadstreamz.sbs/assets/images/log2.png" class="watermark" alt="Logo">
-</div>
-
-<div class="info-section">
-    <div class="action-row">
-        <div class="movie-meta">
-            <h1>Now Watching</h1>
-            <span>Action • 2025 • 4K HDR</span>
+    <div class="controls visible" id="ui">
+        <div class="progress-box">
+            <input type="range" id="seek" min="0" max="100" value="0" step="0.1">
         </div>
-        <a id="download-btn" class="btn-download-red" href="#" download>
-            ⬇ Download Movie
-        </a>
+        <div class="btn-row">
+            <div class="grp">
+                <button id="playToggle"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                <span class="time-txt" id="timer">00:00 / 00:00</span>
+            </div>
+            <div class="grp">
+                <button id="mute"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+                <button id="fit" class="fit-btn"><svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zm-10-7h2v2h-2v-2zm-4 0h2v2H7v-2zm8 0h2v2h-2v-2z"/></svg></button>
+                <button id="fs"><svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+            </div>
+        </div>
     </div>
-
-    <div class="grid-layout" id="suggestion-container"></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mediaelement/4.2.16/mediaelement-and-player.min.js"></script>
+<div class="content">
+    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding-bottom:20px;">
+        <h3>Now Watching</h3>
+        <a id="dl" class="dl-btn" href="#">⬇ Download</a>
+    </div>
+    <div class="grid" id="sugg"></div>
+</div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
+
+    const vid = document.getElementById('vid');
+    const ui = document.getElementById('ui');
+    const centerWrapper = document.getElementById('centerWrapper');
+    const centerBtn = document.getElementById('centerBtn');
+    const rwdBtn = document.getElementById('rwdBtn');
+    const fwdBtn = document.getElementById('fwdBtn');
+    const playToggle = document.getElementById('playToggle');
+    const seek = document.getElementById('seek');
+    const container = document.getElementById('player');
+    const initLoader = document.getElementById('initialLoader');
+    const bufLoader = document.getElementById('bufferLoader');
     
-    const mediaLink = "{{ mediaLink }}" || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-    const wrapper = document.getElementById('video-wrapper');
-    const storageKey = "chad_vid_" + encodeURIComponent(mediaLink);
-    
-    document.getElementById('download-btn').href = mediaLink;
+    const mediaLink = "{{ mediaLink }}" || vid.querySelector('source').src;
+    document.getElementById('dl').href = mediaLink;
+    const storageKey = "chad_resume_" + encodeURIComponent(mediaLink);
+    let hideTimeout;
+    let lastTap = 0;
 
-    // --- Player Initialization ---
-    const player = new MediaElementPlayer('player1', {
-        stretching: 'responsive',
-        // KEY SETTING: Disable click to toggle pause automatically
-        clickToPlayPause: false, 
-        features: ['playpause', 'current', 'progress', 'duration', 'tracks', 'fullscreen'],
-        success: function(media, node, instance) {
+    const svgPlay = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+    const svgPause = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
 
-            const container = document.querySelector('.mejs__container');
-            const controls = document.querySelector('.mejs__controls');
+    // --- 1. PLAYBACK ---
+    function togglePlayback(e) {
+        if(e) e.stopPropagation();
+        if (vid.paused) vid.play(); else vid.pause();
+    }
 
-            // 1. ADD CUSTOM FIT BUTTON
-            if (controls) {
-                const fitBtn = document.createElement('div');
-                fitBtn.className = 'mejs__button custom-btn';
-                fitBtn.innerHTML = `
-                    <button type="button" title="Fit to Screen" style="background:none; border:none; cursor:pointer;">
-                        <svg viewBox="0 0 24 24"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>
-                    </button>`;
-                
-                fitBtn.onclick = function() {
-                    if (container.classList.contains('force-cover')) {
-                        container.classList.remove('force-cover'); // Contain
-                    } else {
-                        container.classList.add('force-cover'); // Cover
-                    }
-                };
-                
-                // Add before fullscreen
-                const fullscreenBtn = document.querySelector('.mejs__fullscreen-button');
-                if(fullscreenBtn) controls.insertBefore(fitBtn, fullscreenBtn);
+    function updateIcons() {
+        if (vid.paused) {
+            playToggle.innerHTML = svgPlay;
+            centerBtn.innerHTML = svgPlay;
+            centerWrapper.classList.add('visible');
+            ui.classList.add('visible');
+            clearTimeout(hideTimeout);
+        } else {
+            playToggle.innerHTML = svgPause;
+            centerBtn.innerHTML = svgPause;
+            centerWrapper.classList.add('visible'); // Keep visible momentarily
+            startAutoHider();
+        }
+    }
+
+    vid.addEventListener('play', updateIcons);
+    vid.addEventListener('pause', updateIcons);
+
+    centerBtn.addEventListener('click', togglePlayback);
+    playToggle.addEventListener('click', togglePlayback);
+
+    // --- 2. SEEK ---
+    rwdBtn.addEventListener('click', (e) => { e.stopPropagation(); vid.currentTime -= 10; startAutoHider(); });
+    fwdBtn.addEventListener('click', (e) => { e.stopPropagation(); vid.currentTime += 10; startAutoHider(); });
+
+    // --- 3. AUTO HIDE ---
+    function startAutoHider() {
+        clearTimeout(hideTimeout);
+        if(!vid.paused) {
+            hideTimeout = setTimeout(() => {
+                ui.classList.remove('visible');
+                centerWrapper.classList.remove('visible');
+            }, 3000);
+        }
+    }
+
+    container.addEventListener('mouseenter', () => {
+        ui.classList.add('visible'); centerWrapper.classList.add('visible'); clearTimeout(hideTimeout);
+    });
+    container.addEventListener('mouseleave', () => { if(!vid.paused) startAutoHider(); });
+
+    // --- 4. GESTURES ---
+    container.addEventListener('click', (e) => {
+        const now = Date.now();
+        const diff = now - lastTap;
+        if (diff < 400 && diff > 0) handleDoubleTap(e);
+        else {
+            // Single Tap Logic
+            if (ui.classList.contains('visible') && !vid.paused) {
+                ui.classList.remove('visible');
+                centerWrapper.classList.remove('visible');
+            } else {
+                ui.classList.add('visible');
+                centerWrapper.classList.add('visible');
+                startAutoHider();
             }
+        }
+        lastTap = now;
+    });
 
-            // ===============================================
-            // 2. TAP LOGIC (Single Play / Double Pause / Seek)
-            // ===============================================
-            let lastTap = 0;
-            const doubleTapDelay = 300; 
-            let singleTapTimeout;
+    // Don't let control clicks trigger container toggle
+    ui.addEventListener('click', (e) => { e.stopPropagation(); startAutoHider(); });
 
-            // Handle Clicks/Taps
-            wrapper.addEventListener('touchstart', handleTouch);
-            
-            // Mouse click handling for desktop compatibility
-            wrapper.addEventListener('click', (e) => {
-                // Ensure controls show
-                showControls();
-            });
+    function handleDoubleTap(e) {
+        const isRotated = container.classList.contains('force-landscape');
+        let clickPos, limit;
+        if (isRotated) { clickPos = e.clientY; limit = window.innerHeight; }
+        else { clickPos = e.clientX - container.getBoundingClientRect().left; limit = container.getBoundingClientRect().width; }
 
-            function handleTouch(e) {
-                const currentTime = new Date().getTime();
-                const tapLength = currentTime - lastTap;
-                const touchX = e.changedTouches[0].clientX;
-                const screenWidth = window.innerWidth;
-                
-                // Always wake up controls
-                showControls();
+        if (clickPos < limit * 0.35) { vid.currentTime -= 10; flash('tapLeft'); }
+        else if (clickPos > limit * 0.65) { vid.currentTime += 10; flash('tapRight'); }
+        else togglePlayback();
+    }
+    function flash(id) {
+        const el = document.getElementById(id);
+        el.classList.remove('animate');
+        void el.offsetWidth; el.classList.add('animate');
+    }
 
-                if (tapLength < doubleTapDelay && tapLength > 0) {
-                    // --- DOUBLE TAP DETECTED ---
-                    clearTimeout(singleTapTimeout); // Cancel single tap action
-                    e.preventDefault(); 
-                    
-                    // Left Side (Rewind)
-                    if (touchX < screenWidth * 0.35) {
-                        media.setCurrentTime(Math.max(0, media.currentTime - 5));
-                        triggerFeedback(document.getElementById('tap-feedback-left'));
-                    } 
-                    // Right Side (Forward)
-                    else if (touchX > screenWidth * 0.65) {
-                        media.setCurrentTime(Math.min(media.duration, media.currentTime + 5));
-                        triggerFeedback(document.getElementById('tap-feedback-right'));
-                    }
-                    // Middle Center (Double Tap -> PAUSE)
-                    else {
-                        media.pause();
-                    }
-                } 
-                else {
-                    // --- POTENTIAL SINGLE TAP ---
-                    // Wait briefly to ensure it's not a double tap
-                    singleTapTimeout = setTimeout(() => {
-                        // Single tap logic: If paused, PLAY.
-                        if (media.paused) {
-                            media.play();
-                        }
-                        // If already playing, Single Tap DOES NOTHING (just shows controls, handled above)
-                    }, doubleTapDelay);
-                }
+    // --- 5. SYSTEM ---
+    vid.preload = "auto";
+    vid.addEventListener('canplay', () => initLoader.classList.remove('active'));
+    if(vid.readyState >= 3) initLoader.classList.remove('active');
+    vid.addEventListener('waiting', () => bufLoader.classList.add('active'));
+    vid.addEventListener('playing', () => { bufLoader.classList.remove('active'); initLoader.classList.remove('active'); });
 
-                lastTap = currentTime;
-            }
+    function fmt(s) { const m=Math.floor(s/60), ss=Math.floor(s%60); return `${m}:${ss<10?'0'+ss:ss}`; }
+    vid.addEventListener('timeupdate', () => {
+        if(!isNaN(vid.duration)){
+            const p = (vid.currentTime / vid.duration) * 100;
+            seek.value = p;
+            seek.style.background = `linear-gradient(to right, #e50914 ${p}%, rgba(255,255,255,0.2) ${p}%)`;
+            document.getElementById('timer').innerText = `${fmt(vid.currentTime)} / ${fmt(vid.duration)}`;
+            if(Math.floor(vid.currentTime)%2===0) localStorage.setItem(storageKey, vid.currentTime);
+        }
+    });
+    seek.addEventListener('input', () => { vid.currentTime = (seek.value/100)*vid.duration; startAutoHider(); });
 
-            function triggerFeedback(element) {
-                element.classList.add('active');
-                setTimeout(() => element.classList.remove('active'), 500);
-            }
-
-            // 3. AUTO HIDE CONTROLS
-            let hideTimeout;
-            function showControls() {
-                container.classList.remove('controls-hidden');
-                clearTimeout(hideTimeout);
-                
-                hideTimeout = setTimeout(() => {
-                    if (!media.paused) {
-                        container.classList.add('controls-hidden');
-                    }
-                }, 3500); 
-            }
-
-            // Keep controls alive on interaction
-            wrapper.addEventListener('mousemove', showControls);
-            media.addEventListener('play', showControls);
-            media.addEventListener('pause', () => {
-                clearTimeout(hideTimeout);
-                container.classList.remove('controls-hidden');
-            });
-
-            // 4. LANDSCAPE HANDLER
-            let isRotated = false;
-            document.addEventListener('fullscreenchange', handleFullscreen);
-            document.addEventListener('webkitfullscreenchange', handleFullscreen);
-
-            function handleFullscreen() {
-                const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
-                if (isFullscreen) {
-                    if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock("landscape").catch(() => forceCssLandscape());
-                    } else {
-                        forceCssLandscape();
-                    }
-                    showControls();
-                } else {
-                    resetCssLandscape();
-                }
-            }
-
-            function forceCssLandscape() {
-                if (window.innerWidth < window.innerHeight) {
-                    wrapper.classList.add('video-force-rotate');
-                    container.style.width = '100vh';
-                    container.style.height = '100vw';
-                    isRotated = true;
-                }
-            }
-
-            function resetCssLandscape() {
-                if (isRotated) {
-                    wrapper.classList.remove('video-force-rotate');
-                    container.style.width = '100%';
-                    container.style.height = '100%';
-                    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
-                    isRotated = false;
-                }
-            }
-
-            // Resume Playback (Unchanged)
-            media.addEventListener('loadedmetadata', () => {
-                const t = parseFloat(localStorage.getItem(storageKey));
-                if (t) media.setCurrentTime(t);
-            });
-            media.addEventListener('pause', () => localStorage.setItem(storageKey, media.currentTime));
-            setInterval(() => { if (!media.paused) localStorage.setItem(storageKey, media.currentTime); }, 5000);
+    document.getElementById('mute').addEventListener('click', function(){ vid.muted = !vid.muted; this.style.opacity = vid.muted ? 0.5 : 1; });
+    document.getElementById('fit').addEventListener('click', function(){ this.classList.toggle('active', vid.classList.toggle('fill-mode')); });
+    document.getElementById('fs').addEventListener('click', () => {
+        if(!document.fullscreenElement) container.requestFullscreen ? container.requestFullscreen() : vid.webkitEnterFullscreen();
+        else document.exitFullscreen();
+    });
+    document.addEventListener('fullscreenchange', () => {
+        if(document.fullscreenElement) {
+            if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
+            container.classList.add('force-landscape');
+        } else {
+            container.classList.remove('force-landscape');
+            if(screen.orientation) screen.orientation.unlock();
         }
     });
 
-    // Dummy API Load
-    fetch("https://chadstreamz.sbs/api/random_movies.php")
-        .then(res => res.json())
-        .then(data => {
-            const box = document.getElementById('suggestion-container');
-            box.innerHTML = "";
-            data.forEach(m => {
-                const d = document.createElement("div");
-                d.className = "card";
-                d.onclick = () => { if(m.download) location.href = m.download; };
-                d.innerHTML = `<img src="${m.image_url}" loading="lazy">`;
-                box.appendChild(d);
+    vid.addEventListener('loadedmetadata', () => { const t=parseFloat(localStorage.getItem(storageKey)); if(t) vid.currentTime=t; });
+    async function loadSugg() {
+        try {
+            const r = await fetch("https://chadstreamz.sbs/api/random_movies.php");
+            const d = await r.json();
+            const g = document.getElementById('sugg');
+            g.innerHTML = "";
+            d.forEach(m => {
+                const c = document.createElement("div"); c.className = "card";
+                c.innerHTML = `<img src="${m.image_url}" loading="lazy">`;
+                c.onclick = () => { if(m.download) window.location.href = m.download; };
+                g.appendChild(c);
             });
-        }).catch(e => console.log(e));
+        } catch(e){}
+    }
+    loadSugg();
 });
 </script>
-
 </body>
 </html>
